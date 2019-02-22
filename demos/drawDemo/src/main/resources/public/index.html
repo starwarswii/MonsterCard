@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>DrawingDemo</title>
+    <meta name="description" content="DrawingDemo" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.4.6/fabric.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+</head>
+<body>
+
+<canvas id="c" width="500" height="500" style="border:1px solid black"></canvas>
+<div style="display: inline-block; margin-left: 10px; margin-top: 10px">
+    <button id="clearcanvas">Clear</button><br>
+    <div id="drawing_modeoptions"></div>
+    <label for="drawing_linewidth">Line width:</label>
+    <span class="info">30</span><input type="range" value="30" min="0" max="150" id="drawing_linewidth"><br>
+
+    <label for="drawing_color">Line color:</label>
+    <input type="color" value="#000000" id="drawing_color"><br>
+</div>
+<button id="save">Send to Server</button>
+<div>
+    <input type="number" id="cardID" min="1">
+    <button id="req">Repaint Canvas</button>
+</div>
+<script src="script.js"></script>
+
+</body>
+</html>
