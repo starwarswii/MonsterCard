@@ -52,27 +52,14 @@ public class Chat {
 
 
     private static void broadcastMessage(String sender, String message) {
-        System.out.println("in broadcastMessage function");
+
         userUsernameMap.keySet().stream().filter(Session::isOpen).forEach(session -> {
             session.send(
                     new JSONObject()
-                        .put("userMessage", createHtmlMessageFromSender(sender, message))
+                        .put("userMessage", sender + ": " + message)
                         .put("userlist", userUsernameMap.values()).toString());
 
         });
-    }
-
-
-
-    private static String createHtmlMessageFromSender(String sender, String message) {
-
-        System.out.println("in createHtmlMessageFromSender function");
-        return article(
-                b(sender + " says:"),
-                span(attrs(".timestamp"), new SimpleDateFormat("HH:mm:ss").format(new Date())),
-                p(message)
-
-        ).render();
     }
 
 }
