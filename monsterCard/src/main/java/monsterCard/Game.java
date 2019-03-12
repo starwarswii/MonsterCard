@@ -10,4 +10,15 @@ public class Game {
 	int votes1, votes2;
 	Player activeplayer1, activeplayer2;
 	
+	public Game() {
+		
+	}
+	
+	public void addPlayer(String name) {
+		
+	}
+	
+	public void addSpectator(String name) {
+		
+	}
 }
