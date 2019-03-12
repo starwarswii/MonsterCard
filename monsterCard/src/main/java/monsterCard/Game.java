@@ -35,4 +35,9 @@ public class Game {
 		spectators.add(newSpectator);
 	}
 	
+	public int quit() {
+		
+		return gameID;
+	}
+	
 }
