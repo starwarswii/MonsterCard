@@ -3,6 +3,7 @@ package monsterCard;
 public class User {
 	String username;
 	
+	//Default constructor, takes in a user provided username and saves it
 	public User(String name) {
 		username = name;
 	}

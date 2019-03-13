@@ -35,6 +35,7 @@ public class Game {
 		spectators.add(newSpectator);
 	}
 	
+	//End the game, and return the game ID to GameManager for it to use to remove this game from the list of games
 	public int quit() {
 		
 		return gameID;
