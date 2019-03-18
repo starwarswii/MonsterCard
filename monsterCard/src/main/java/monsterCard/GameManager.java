@@ -17,6 +17,7 @@ public class GameManager {
 	
 	//Takes a user provided String, creates a new game with that String as its name, and adds it to the HashMap 'games'
 	//Then, increments num_games
+	//TODO: Unsure if the 'main' function of the new Game will start running automatically from here or not. Should look into it
 	public void addGame(String name) {
 		num_games++;
 		games.put(num_games, new Game(name,num_games));
