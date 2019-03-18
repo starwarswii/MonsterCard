@@ -1,8 +1,6 @@
 package monsterCard;
 
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,14 +9,16 @@ import io.javalin.websocket.WsSession;
 import org.eclipse.jetty.websocket.api.Session;
 import org.json.JSONObject;
 
-import static j2html.TagCreator.*;
-
 
 public class Chat {
     private static Map<WsSession, String> userUsernameMap = new ConcurrentHashMap<>();
     private static int nextUserNumber = 1;
 
 
+
+
+
+    //TODO: get this working with multiple chatrooms
 
 
     public static void main(String[] args) {
@@ -43,6 +43,8 @@ public class Chat {
                     });
                 })
                 .start(7070);
+
+
 
 
 
