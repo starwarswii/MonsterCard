@@ -118,10 +118,10 @@ public class RoomDemo {//TODO add some logging like in timer demo
 		
 		public void handleMessage(WsSession user, String response) {
 			
-			//TODO have sockets tell you their session id on connection, use that to figure out who it it
+			//TODO have sockets tell you their session id on connection, use that to figure out who it is
 			//need a distinction between player/user and socket connection
 			
-			//when socket closes, we still have user, but the're "away" or somthing
+			//when socket closes, we still have user, but they're "away" or somthing
 			//add button to leave room, this removes player from room
 			
 			System.out.println(response);

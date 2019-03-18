@@ -64,10 +64,14 @@ public class Game {
 			}
 		}while(true);
 		do {
+			if(alreadygone.size()==players.size()) {
+				break;
+			}
 			i = rand.nextInt(players.size());
 			if(!alreadygone.contains(ids[i])) {
 				alreadygone.add(ids[i]);
 				activeplayer2 = ids[i];
+				break;
 			}
 		}while(true);
 	}

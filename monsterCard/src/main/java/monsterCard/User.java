@@ -13,4 +13,9 @@ public class User {
 	public void vote() {
 		
 	}
+	
+	//Causes the User to exit the Game
+	public void quit() {
+		
+	}
 }

@@ -28,6 +28,7 @@ public class GameManager {
 	public void addPlayertoGame(String name, String ID, String game_name) {
 		games.get(name_to_id.get(game_name)).addPlayer(name, ID);
 		//TODO: Change the user's web page such that they load into the game on their end
+		//Should maybe done via HTML in a separate file, unsure how it links to this function
 	}
 	
 	//Removes a terminated game specified by 'ID' from 'games', and decrements num_games
