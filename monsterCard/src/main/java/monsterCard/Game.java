@@ -5,14 +5,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 
 public class Game {
 	String gameName;
 	Map<String,Player> players;
 	List<Spectator> spectators;
 	List<Card> deck;
-	int votes1, votes2, gameID;
+	int votes1, votes2, gameID, rounds;
 	String activeplayer1, activeplayer2;
 	List<String> alreadygone;
 	
@@ -30,7 +29,7 @@ public class Game {
 	}
 	
 	//Adds a new Player with a user provided username
-	public void addPlayer(String ID, String name) {
+	public void addPlayer(String name, String ID) {
 		Player newPlayer = new Player(name,ID);
 		players.put(ID, newPlayer);
 	}
@@ -41,9 +40,17 @@ public class Game {
 		spectators.add(newSpectator);
 	}
 	
+	//Randomly chooses two new Players to play the next round
+	//Sets activeplayer1 and activeplayer2 to be equal to those players' IDs
+	//Each player plays once per round, assuming an even number of players. Currently caps at 3 rounds
 	public void changeActivePlayers() {
 		if(alreadygone.size()==players.size()) {
-			this.quit();
+			if(rounds==3) {
+				this.quit();
+			}else {
+				rounds++;
+				alreadygone.clear();
+			}
 		}
 		Random rand = new Random();
 		int i = 100;
