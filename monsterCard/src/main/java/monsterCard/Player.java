@@ -25,8 +25,12 @@ public class Player extends User {
 	
 	//Allows user to draw on their canvas and save the results to their 'activeCard'
 	//TODO: Add code to allow users to draw cards and save drawings
-	public void drawCard() {
+	public void drawCard(String drawing) {
 		String tmp = null;
 		activeCard.updatecard(tmp);
+	}
+	
+	public String displayCard() {
+		return activeCard.displayCard();
 	}
 }

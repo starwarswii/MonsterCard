@@ -9,7 +9,7 @@ import java.util.HashMap;
 public class Game {
 	String gameName;
 	Map<String,Player> players;
-	List<Spectator> spectators;
+	List<Spectator> spectators;	//Change to Map like "players"
 	List<Card> deck;
 	int votes1, votes2, gameID, rounds;
 	String activeplayer1, activeplayer2;
@@ -40,9 +40,18 @@ public class Game {
 		spectators.add(newSpectator);
 	}
 	
+	public void removePlayer(String ID) {
+		players.remove(ID);
+	}
+	
+	public void removeSpectator(String ID) {
+		spectators.remove(null); //Change once "spectators" is changed to use a HashMap
+	}
+	
 	//Randomly chooses two new Players to play the next round
 	//Sets activeplayer1 and activeplayer2 to be equal to those players' IDs
 	//Each player plays once per round, assuming an even number of players. Currently caps at 3 rounds
+	//One player will play twice in a round (specifically, in the last two face offs) if there are an odd number of players
 	public void changeActivePlayers() {
 		if(alreadygone.size()==players.size()) {
 			if(rounds==3) {
