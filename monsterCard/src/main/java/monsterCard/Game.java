@@ -1,11 +1,13 @@
 package monsterCard;
 
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Game {
 	String gameName;
-	List<Player> players;
+	Map<String,Player> players;
 	List<Spectator> spectators;
 	List<Card> deck;
 	int votes1, votes2, gameID;
@@ -15,7 +17,7 @@ public class Game {
 	public Game(String name, int ID) {
 		gameID = ID;
 	    gameName = name;
-	    players = new ArrayList<Player>();
+	    players = new HashMap<String,Player>();
 	    spectators = new ArrayList<Spectator>();
 	    deck = new ArrayList<Card>();
 	    votes1 = votes2 = 0;
@@ -24,14 +26,14 @@ public class Game {
 	}
 	
 	//Adds a new Player with a user provided username
-	public void addPlayer(String name) {
-		Player newPlayer = new Player(name);
-		players.add(newPlayer);
+	public void addPlayer(String ID, String name) {
+		Player newPlayer = new Player(name,ID);
+		players.put(ID, newPlayer);
 	}
 	
 	//Adds a new Spectator with a user provided username
-	public void addSpectator(String name) {
-		Spectator newSpectator = new Spectator(name);
+	public void addSpectator(String name, String ID) {
+		Spectator newSpectator = new Spectator(name,ID);
 		spectators.add(newSpectator);
 	}
 	

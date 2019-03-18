@@ -15,4 +15,7 @@ public class Card {
 		card_name = creator_name = currentversion = null;
 	}
 	
+	public void updatecard(String version) {
+		currentversion = version;
+	}
 }

@@ -8,8 +8,8 @@ public class Player extends User {
 	Card activeCard;
 	
 	//Default constructor, takes in username from user
-	public Player(String name) {
-		super(name);
+	public Player(String name, String ID) {
+		super(name, ID);
 		hand = new ArrayList<Card>();
 	}
 }
