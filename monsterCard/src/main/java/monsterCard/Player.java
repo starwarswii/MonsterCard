@@ -33,4 +33,10 @@ public class Player extends User {
 	public String displayCard() {
 		return activeCard.displayCard();
 	}
+	
+	//Allows user to choose which card they want to be active for a duel
+	//TODO: Add code to choose card
+	public void chooseCard() {
+		
+	}
 }

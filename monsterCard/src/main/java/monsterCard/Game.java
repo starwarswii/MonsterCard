@@ -85,6 +85,17 @@ public class Game {
 		}while(true);
 	}
 	
+	//Decides who won the round, based on who got more votes. In case of a tie, 
+	public void decideRoundWinner() {
+		
+	}
+	
+	//After round winner is decided, the consequences of the round are put into effect.
+	//TODO: code method to take the losing card and give it to the winner to edit
+	public RoundConsequences() {
+		
+	}
+	
 	//End the game, and return the game ID to GameManager for it to use to remove this game from the list of games
 	public int quit() {
 		
