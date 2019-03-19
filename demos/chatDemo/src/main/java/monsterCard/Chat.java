@@ -18,7 +18,7 @@ public class Chat {
 
 
 
-    //TODO: get this working with multiple chatrooms
+    //TODO: get this working with multiple chat rooms
 
 
     public static void main(String[] args) {
