@@ -6,12 +6,14 @@ import java.util.HashMap;
 public class GameManager {
 	Map<String,Integer> name_to_id;
 	Map<Integer,Game> games;
+	Map<String,String> socket_to_id;
 	int num_games;
 	
 	//Default constructor
 	public GameManager() {
 		games = new HashMap<Integer,Game>();
 		name_to_id = new HashMap<String,Integer>();
+		socket_to_id = new HashMap<String,String>();
 		num_games = 0;
 	}
 	

@@ -40,6 +40,7 @@ public class Game {
 		spectators.add(newSpectator);
 	}
 	
+	//Remove a player who has quit from the game
 	public void removePlayer(String ID) {
 		players.remove(ID);
 	}
@@ -86,14 +87,20 @@ public class Game {
 	}
 	
 	//Decides who won the round, based on who got more votes. In case of a tie, 
-	public void decideRoundWinner() {
-		
+	public String decideRoundWinner() {
+		if(votes1>votes2) {
+			return activeplayer1;
+		}else if(votes1<votes2) {
+			return activeplayer2;
+		}else {
+			return activeplayer1;
+		}
 	}
 	
 	//After round winner is decided, the consequences of the round are put into effect.
 	//TODO: code method to take the losing card and give it to the winner to edit
-	public RoundConsequences() {
-		
+	public void RoundConsequences() {
+		String winner = decideRoundWinner();
 	}
 	
 	//End the game, and return the game ID to GameManager for it to use to remove this game from the list of games
@@ -101,5 +108,8 @@ public class Game {
 		
 		return gameID;
 	}
-	
+
+	public void main() {
+		
+	}
 }
