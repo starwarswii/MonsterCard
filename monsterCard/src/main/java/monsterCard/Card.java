@@ -18,4 +18,12 @@ public class Card {
 	public void updatecard(String version) {
 		currentversion = version;
 	}
+	
+	public String displayCard() {
+		return currentversion;
+	}
+	
+	public void addDescriptor(String new_descriptor) {
+		descriptors.add(new_descriptor);
+	}
 }

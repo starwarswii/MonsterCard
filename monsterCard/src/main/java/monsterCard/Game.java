@@ -9,7 +9,7 @@ import java.util.HashMap;
 public class Game {
 	String gameName;
 	Map<String,Player> players;
-	List<Spectator> spectators;
+	List<Spectator> spectators;	//Change to Map like "players"
 	List<Card> deck;
 	int votes1, votes2, gameID, rounds;
 	String activeplayer1, activeplayer2;
@@ -40,9 +40,19 @@ public class Game {
 		spectators.add(newSpectator);
 	}
 	
+	//Remove a player who has quit from the game
+	public void removePlayer(String ID) {
+		players.remove(ID);
+	}
+	
+	public void removeSpectator(String ID) {
+		spectators.remove(null); //Change once "spectators" is changed to use a HashMap
+	}
+	
 	//Randomly chooses two new Players to play the next round
 	//Sets activeplayer1 and activeplayer2 to be equal to those players' IDs
 	//Each player plays once per round, assuming an even number of players. Currently caps at 3 rounds
+	//One player will play twice in a round (specifically, in the last two face offs) if there are an odd number of players
 	public void changeActivePlayers() {
 		if(alreadygone.size()==players.size()) {
 			if(rounds==3) {
@@ -76,10 +86,30 @@ public class Game {
 		}while(true);
 	}
 	
+	//Decides who won the round, based on who got more votes. In case of a tie, 
+	public String decideRoundWinner() {
+		if(votes1>votes2) {
+			return activeplayer1;
+		}else if(votes1<votes2) {
+			return activeplayer2;
+		}else {
+			return activeplayer1;
+		}
+	}
+	
+	//After round winner is decided, the consequences of the round are put into effect.
+	//TODO: code method to take the losing card and give it to the winner to edit
+	public void RoundConsequences() {
+		String winner = decideRoundWinner();
+	}
+	
 	//End the game, and return the game ID to GameManager for it to use to remove this game from the list of games
 	public int quit() {
 		
 		return gameID;
 	}
-	
+
+	public void main() {
+		
+	}
 }

@@ -18,6 +18,8 @@ public class CardStore {
 		dealt = new ArrayList<Integer>();
 	}
 	
+	//May want another constructor that populates the CardStore with Cards taken in from the database
+	
 	//Adds all cards from a list of cards to storage
 	public void addCards(List<Card> new_cards) {
 		for(int i = 0; i < new_cards.size(); i++) {
@@ -25,6 +27,7 @@ public class CardStore {
 		}
 	}
 	
+	//Adds new blank Cards to 'store'
 	public void addCards(int new_cards) {
 		for(int i = 0; i < new_cards; i++) {
 			store.add(new Card());
@@ -32,7 +35,7 @@ public class CardStore {
 	}
 	
 	//Provides a List containing random Card objects of length 'num'
-	//Should add a tracker for which Cards have already been 'dealt' to players
+	//When cards are dealt to players, their index in 'store' is added to 'dealt' so that we know that Card is taken
 	//Stops dealing cards if all Cards have been dealt, and deals the rest as blank cards
 	public List<Card> getCards(int num) {
 		List<Card> tmp = new ArrayList<Card>();
