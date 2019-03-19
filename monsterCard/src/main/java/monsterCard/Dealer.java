@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.ArrayList;
 
-public class CardStore {
+public class Dealer {
 	List<Card> store;
 	List<Integer> dealt;
 	
-	//Default constructor, populates the CardStore with blank Card objects
-	public CardStore() {
+	//Default constructor, populates the Dealer with blank Card objects
+	public Dealer() {
 		store = new ArrayList<Card>();
 		for(int i=0;i<9;i++) {
 			store.add(new Card());
@@ -17,7 +17,7 @@ public class CardStore {
 		dealt = new ArrayList<Integer>();
 	}
 	
-	//May want another constructor that populates the CardStore with Cards taken in from the database
+	//May want another constructor that populates the Dealer with Cards taken in from the database
 	
 	//Adds all cards from a list of cards to storage
 	public void addCards(List<Card> new_cards) {
