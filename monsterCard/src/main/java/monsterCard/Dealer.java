@@ -1,6 +1,7 @@
 package monsterCard;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.ArrayList;
 
@@ -57,7 +58,18 @@ public class Dealer {
 	}
 	
 	//Returns Cards that were previously dealt out by getCards()
-	public void returnCard(List<Card> hand) {
-		
+	public void returnCard(List<Card> hand) throws NoSuchElementException{
+		for(int i = 0; i< hand.size(); i++) {
+
+			//First get the index of the card in the store
+			int index_of_card = store.indexOf(hand.get(i));
+
+			if(index_of_card == -1)  {
+				throw new NoSuchElementException("Trying to return card that wasn't originally in deck");
+			}else{
+				//Remove the card. .Remove() only removes object if it exists
+				dealt.remove(index_of_card);
+			}
+		}
 	}
 }
