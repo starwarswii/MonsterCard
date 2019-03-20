@@ -1,23 +1,14 @@
 package roomDemo;
 
-//import java.lang.reflect.Field;
 import java.util.ArrayList;
-//import java.util.EnumSet;
 import java.util.HashMap;
-//import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import io.javalin.Javalin;
-//import io.javalin.core.util.JettyServerUtil;
 import io.javalin.json.JavalinJson;
 import io.javalin.websocket.WsSession;
-
-//import javax.servlet.SessionTrackingMode;
-
-//import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.session.DefaultSessionCache;
-//import org.eclipse.jetty.server.session.NullSessionCache;
 import org.eclipse.jetty.server.session.NullSessionDataStore;
 import org.eclipse.jetty.server.session.SessionCache;
 import org.eclipse.jetty.server.session.SessionHandler;
@@ -178,30 +169,7 @@ public class RoomDemo {//TODO add some logging like in timer demo
 	
 	public static void main(String[] args) {
 		Javalin app = Javalin.create().enableStaticFiles("/public");
-		
-//		app.server(() -> {
-//			Server server = new Server();
-//			
-//			return server;
-//		});
-		
-//		try {
-//			Field field = Javalin.class.getDeclaredField("jettySessionHandler");
-//			field.setAccessible(true);
-//			
-//			SessionHandler handler = JettyServerUtil.defaultSessionHandler();
-//			//handler.setSessionCookie("newcookie");
-//			handler.setHttpOnly(false);
-//			//handler.setSessionTrackingModes(EnumSet.of(SessionTrackingMode.URL));
-//			
-//			
-//			field.set(app, handler);
-//		} catch (Exception e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
 
-		
 		app.sessionHandler(() -> {
 			
 			SessionHandler handler = new SessionHandler();
@@ -215,18 +183,6 @@ public class RoomDemo {//TODO add some logging like in timer demo
 			return handler;
 		});
 		
-//		app.server(() -> {
-//			
-//			Server server = JettyServerUtil.defaultServer();
-//			
-//			server.getSessionIdManager().getSessionHandlers().forEach(x -> {
-//				x.setUsingCookies(false);
-//			});
-//			
-//			return server;
-//			
-//		});
-//		
 		//no redirect for root is needed, going to root (/), javalin serves index.html
 		
 		GameManager manager = new GameManager();
