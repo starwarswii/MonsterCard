@@ -42,6 +42,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		});
 		
 		
+		//TODO add support for providing game name
 		app.get("/create", ctx -> {
 			System.out.println("create requested");
 			String ownerId = ctx.req.getSession().getId();
@@ -109,14 +110,14 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				//TODO we might be ok assuming this, as naturally you will be served a "game not found" page
 				//if you type an invalid id, and that wont spawn a websocket
 				
-				manager.getGame(id).addUser(session);
+				manager.getGame(id).handleConnect(session);
 			});
 
 			ws.onClose((session, statusCode, reason) -> {
 				int id = Integer.parseInt(session.pathParam("id"));
 				System.out.println("websocket connection closed from "+session.host()+" with id "+session.getId()+". "+statusCode+": "+reason);
 				
-				manager.getGame(id).removeUser(session);
+				manager.getGame(id).handleClose(session);
 			});
 
 			ws.onMessage((session, response) -> {
@@ -126,8 +127,6 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				manager.getGame(id).handleMessage(session, response);
 			});
 		});
-		
-		//TODO check session.isOpen before contacting
 		
 		
 		

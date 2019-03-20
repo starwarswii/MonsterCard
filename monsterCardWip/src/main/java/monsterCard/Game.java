@@ -2,36 +2,27 @@ package monsterCard;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Function;
-
 import org.json.JSONObject;
-
-import io.javalin.json.JavalinJson;
 import io.javalin.websocket.WsSession;
 
 public class Game {
 	static final int TIMER_LENGTH = 20;
 	
 	//TODO make websocket manager thing
+	//eh maybe not now, depeneds on need?
 	//on join, adds to list
 	//on leave, removes from lisr
 	//could also handle "this is who i am" messages
 	//and could even use it to definbe a custom "command" language
 	//person says thing, we do this.
 	
-	ArrayList<WsSession> websockets; //list of sessions
+	//ArrayList<WsSession> websockets; //list of sessions
 	String ownerId; //session id of owner
-	
-	//TODO?
-	//ArrayList<WsSession> chatWebsockets;
-	//Map<WsSession, String> websocketToSessionId;
-	
-	//String gameName;
-	
-	int id; //TODO maybe not needed
+	String name; //name of this game
 	
 	//TODO volatile needed? on one? on both?
 	volatile int timerValue;
@@ -40,20 +31,31 @@ public class Game {
 	Timer timer;
 	TimerTask timerTask;
 	
-	public Game(int id, String ownerId/*, String gameName*/) {
-		this.id = id;
+	HashMap<WsSession, String> websocketToSessionId;
+	HashMap<String, User> sessionIdToUser;
+	
+	//for now, assume a message will tell you what player sent it
+	//so we don't need any maps
+	//ArrayList<Player> players;
+	//ArrayList<Spectator> spectators;
+	
+	public Game(String ownerId, String name) {
 		this.ownerId = ownerId;
-		//this.gameName = gameName;
+		this.name = name;
 		
-		websockets = new ArrayList<>();
+		//websockets = new ArrayList<>();
 		
 		timerValue = TIMER_LENGTH;
 		timerRunning = false;
 		
 		timer = new Timer();
 		
-		//TODO may need to be defined each time we want to time
-		//aka within startTimer()
+		websocketToSessionId = new HashMap<>();
+		sessionIdToUser = new HashMap<>();
+		
+		//players = new ArrayList<>();
+		//spectators = new ArrayList<>();
+		
 	}
 	
 	public boolean isOwner(String userId) {
@@ -117,8 +119,10 @@ public class Game {
 	}
 	
 	public void sendToAll(String message) {
-		for (WsSession s : websockets) {
-			s.send(message);
+		for (WsSession s : websocketToSessionId.keySet()) {
+			if (s.isOpen()) {
+				s.send(message);	
+			}
 		}
 	}
 	
@@ -131,18 +135,54 @@ public class Game {
 		sendToAll(x.apply(new JSONObject()).toString());
 	}
 	
-	public void addUser(WsSession user) {
-		websockets.add(user);
+//	public void addUser(WsSession user) {
+//		websockets.add(user);
+//	}
+//	
+//	public void removeUser(WsSession user) {
+//		websockets.remove(user);
+//		
+//		//TODO what should happen when removing owner?
+//		//could close room, or assign another owner, or somthing
+//	}
+	
+	//for whatever reason the JSESSIONID cookie is "xxxxxxxxx.yyyy"
+	//and the actual session id is "xxxxxxxxx"
+	private String parseSessionId(String raw) {
+		return raw.split("\\.")[0];
 	}
 	
-	public void removeUser(WsSession user) {
-		websockets.remove(user); //commented out as it should allow rejoining
-		
-		//TODO what should happen when removing owner?
-		//could close room, or assign another owner, or somthing
+	private List<Player> getPlayers() {
+		ArrayList<Player> players = new ArrayList<>();
+		for (User u: sessionIdToUser.values()) {
+			//TODO maybe better data structure than having to do this
+			//TODO could probably improve with u.isPlayer() or somthing
+			if (u instanceof Player) {
+				players.add((Player)u);
+			}
+		}
+		return players;
 	}
 	
-	public void handleMessage(WsSession user, String response) {
+	private List<Spectator> getSpectators() {
+		ArrayList<Spectator> spectators = new ArrayList<>();
+		for (User u: sessionIdToUser.values()) {
+			if (u instanceof Spectator) {
+				spectators.add((Spectator)u);
+			}
+		}
+		return spectators;
+	}
+	
+	public void handleConnect(WsSession session) {
+		//this is probably no-op
+	}
+	
+	public void handleClose(WsSession session) {
+		websocketToSessionId.remove(session);
+	}
+	
+	public void handleMessage(WsSession session, String response) {
 		
 		//TODO have sockets tell you their session id on connection, use that to figure out who it is
 		//need a distinction between player/user and socket connection
@@ -152,13 +192,35 @@ public class Game {
 		
 		System.out.println(response);
 		
-		@SuppressWarnings("unchecked")
-		//TODO org.json seems to be better than Jackson. see if we can tell javalin to use it
-		HashMap<String, String> map = JavalinJson.fromJson(response, HashMap.class);
+		JSONObject map = new JSONObject(response);
 		
-		String type = map.get("type");
+		String type = map.getString("type");
 		
-		//System.out.println("handling message from "+user.getId()+" with given id "+id+": "+message);
+		if (type.equals("whoiam")) {
+			String sessionId = parseSessionId(map.getString("sessionId"));
+			
+			//TODO let everyone else know a user joined?
+			//with chat message
+			//or maybe that behavior should be somewhere else
+			
+			//TODO if problems arise, try using websocket session id instead as key
+			websocketToSessionId.put(session, sessionId);
+			
+			if (!sessionIdToUser.containsKey(sessionId)) {
+				sessionIdToUser.put(sessionId, new Player("temp name", sessionId));
+			}
+			//TODO handle different user types (player vs spectator)
+			//maybe dont set user type immediately and let them send a message indicating what
+			//they want to change to? would suggest coming Player and Spectator classes
+			
+			return;
+		}
+		
+		
+		if (!websocketToSessionId.containsKey(session)) {
+			System.out.println("got message from unrecognized session "+session+", ignoring");
+			return;
+		}
 		
 		switch (type) {
 		
@@ -166,7 +228,7 @@ public class Game {
 				
 				//send to everyone
 				
-				String message = map.get("message");
+				String message = map.getString("message");
 				
 				//TODO handle senders
 				//could either send along sender
@@ -183,20 +245,31 @@ public class Game {
 				
 			case "timer":
 				
-				//for whatever reason the JSESSIONID cookie is "xxxxxxxxx.yyyy" and the actual session id is "xxxxxxxxx"
-				String id = map.get("id").split("\\.")[0];
-				//TODO probably don't need to have id always? could only be there some of the time
-				//like a password
-				
-				String command = map.get("command");
+				String command = map.getString("command");
 				
 				
-				if (command.equals("start") && isOwner(id)) {
-					System.out.println("starting!");
-					
-					//also notifies everyone
-					startTimer();	
+				switch (command) {
+					case "start":
+						
+						String sessionId = websocketToSessionId.get(session);
+						
+						if (isOwner(sessionId)) {
+							System.out.println("starting!");
+							//also notifies everyone
+							startTimer();
+							
+						} else {
+							System.out.println("someone who wasn't the owner attempted to start the timer. ignoring");
+						}
+						
+						
+						
+						break;
+						
+					default:
+						System.out.println("unrecognized timer command "+command);
 				}
+				
 				
 				break;
 				

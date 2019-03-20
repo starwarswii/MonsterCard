@@ -47,6 +47,9 @@ $(function() {
 	socket.onopen = function(event) {
 		console.log("Websocket opened");
 		console.log(event);
+		
+		console.log("sending whoiam message");
+		sendMessage({type: "whoiam", sessionId: sessionId});
 	};
 	
 	socket.onclose = function(event) {
@@ -141,7 +144,7 @@ $(function() {
 		sendMessage({
 			type: "timer",
 			command: "start",
-			id: sessionId
+			sessionId: sessionId
 		});
 	});
 	
