@@ -3,6 +3,8 @@ package monsterCard;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Function;
@@ -20,7 +22,6 @@ public class Game {
 	//and could even use it to definbe a custom "command" language
 	//person says thing, we do this.
 	
-	//ArrayList<WsSession> websockets; //list of sessions
 	String ownerId; //session id of owner
 	String name; //name of this game
 	
@@ -28,22 +29,25 @@ public class Game {
 	volatile int timerValue;
 	volatile boolean timerRunning;
 	
+	//used to count down the timer in another thread
 	Timer timer;
 	TimerTask timerTask;
 	
 	HashMap<WsSession, String> websocketToSessionId;
 	HashMap<String, User> sessionIdToUser;
 	
-	//for now, assume a message will tell you what player sent it
-	//so we don't need any maps
-	//ArrayList<Player> players;
-	//ArrayList<Spectator> spectators;
+	String player1; //session id of active player 1
+	int votes1; // votes they have recieved
+	
+	String player2;
+	int votes2;
+	
+	int currentRound; //the current round
+	ArrayList<String> wentThisRound; //list of player session ids that already went this round
 	
 	public Game(String ownerId, String name) {
 		this.ownerId = ownerId;
 		this.name = name;
-		
-		//websockets = new ArrayList<>();
 		
 		timerValue = TIMER_LENGTH;
 		timerRunning = false;
@@ -53,9 +57,14 @@ public class Game {
 		websocketToSessionId = new HashMap<>();
 		sessionIdToUser = new HashMap<>();
 		
-		//players = new ArrayList<>();
-		//spectators = new ArrayList<>();
+		player1 = null;
+		votes1 = 0;
 		
+		player2 = null;
+		votes2 = 0;
+		
+		currentRound = 0;
+		wentThisRound = new ArrayList<>();
 	}
 	
 	public boolean isOwner(String userId) {
@@ -119,9 +128,9 @@ public class Game {
 	}
 	
 	public void sendToAll(String message) {
-		for (WsSession s : websocketToSessionId.keySet()) {
-			if (s.isOpen()) {
-				s.send(message);	
+		for (WsSession session : websocketToSessionId.keySet()) {
+			if (session.isOpen()) {
+				session.send(message);	
 			}
 		}
 	}
@@ -135,17 +144,6 @@ public class Game {
 		sendToAll(x.apply(new JSONObject()).toString());
 	}
 	
-//	public void addUser(WsSession user) {
-//		websockets.add(user);
-//	}
-//	
-//	public void removeUser(WsSession user) {
-//		websockets.remove(user);
-//		
-//		//TODO what should happen when removing owner?
-//		//could close room, or assign another owner, or somthing
-//	}
-	
 	//for whatever reason the JSESSIONID cookie is "xxxxxxxxx.yyyy"
 	//and the actual session id is "xxxxxxxxx"
 	private String parseSessionId(String raw) {
@@ -154,23 +152,43 @@ public class Game {
 	
 	private List<Player> getPlayers() {
 		ArrayList<Player> players = new ArrayList<>();
-		for (User u: sessionIdToUser.values()) {
+		
+		for (User user : sessionIdToUser.values()) {
+			
 			//TODO maybe better data structure than having to do this
 			//TODO could probably improve with u.isPlayer() or somthing
-			if (u instanceof Player) {
-				players.add((Player)u);
+			
+			if (user instanceof Player) {
+				players.add((Player)user);
 			}
 		}
+		
 		return players;
+	}
+	
+	private List<String> getPlayerIds() {
+		ArrayList<String> sessionIds = new ArrayList<>();
+		
+		for (Entry<String, User> entry : sessionIdToUser.entrySet()) {
+			
+			if (entry.getValue() instanceof Player) {
+				sessionIds.add(entry.getKey());
+			}
+		}
+		
+		return sessionIds;
 	}
 	
 	private List<Spectator> getSpectators() {
 		ArrayList<Spectator> spectators = new ArrayList<>();
-		for (User u: sessionIdToUser.values()) {
-			if (u instanceof Spectator) {
-				spectators.add((Spectator)u);
+		
+		for (User user : sessionIdToUser.values()) {
+			
+			if (user instanceof Spectator) {
+				spectators.add((Spectator)user);
 			}
 		}
+		
 		return spectators;
 	}
 	
@@ -203,6 +221,15 @@ public class Game {
 			//with chat message
 			//or maybe that behavior should be somewhere else
 			
+			//TODO could specifiy if player or spectator,
+			//websocket -> (sessionId, isSpectator)
+			//then sessionid -> player or sessionid -> specator
+			
+			//TODO need to add support for users leaving the room
+			//could be done with certain message, or timeout?
+			//what should happen when owner leaves room?
+			//could close room, or assign another owner, or somthing
+			
 			//TODO if problems arise, try using websocket session id instead as key
 			websocketToSessionId.put(session, sessionId);
 			
@@ -211,7 +238,7 @@ public class Game {
 			}
 			//TODO handle different user types (player vs spectator)
 			//maybe dont set user type immediately and let them send a message indicating what
-			//they want to change to? would suggest coming Player and Spectator classes
+			//they want to change to? would suggest combining Player and Spectator classes
 			
 			return;
 		}
@@ -226,14 +253,16 @@ public class Game {
 		
 			case "chat":
 				
-				//send to everyone
-				
 				String message = map.getString("message");
 				
 				//TODO handle senders
 				//could either send along sender
 				//or figure out sender
 				//or pass id along with message
+				
+				//TODO add support for user list
+				//could be type:chat, event:join
+				//and type:chat event:message for what this is now
 				
 				sendToAll(new JSONObject()
 					.put("type", "chat")
@@ -246,7 +275,6 @@ public class Game {
 			case "timer":
 				
 				String command = map.getString("command");
-				
 				
 				switch (command) {
 					case "start":
@@ -262,14 +290,11 @@ public class Game {
 							System.out.println("someone who wasn't the owner attempted to start the timer. ignoring");
 						}
 						
-						
-						
 						break;
 						
 					default:
 						System.out.println("unrecognized timer command "+command);
 				}
-				
 				
 				break;
 				
@@ -278,4 +303,84 @@ public class Game {
 			
 		}
 	}
+	
+	
+	//Randomly chooses two new Players to play the next round
+	//Sets player1 and player2 to be equal to those players' IDs
+	//Each player plays once per round, assuming an even number of players. Currently caps at 3 rounds
+	//One player will play twice in a round (specifically, in the last two face offs) if there are
+	//an odd number of players
+	//TODO there's probably a better way to do this
+	//could maybe figure out all matchings at once and keep a list?
+	public void changeActivePlayers() {
+		int maxRounds = 3;
+		
+		List<String> players = getPlayerIds();
+
+		if (wentThisRound.size() == players.size()) {
+			if (currentRound == maxRounds) {
+				//TODO end game
+				//might be good for games to have a pointer to the GameManager that holds it
+				//so they can tell it to remove themselves
+			} else {
+				currentRound++;
+				wentThisRound.clear();
+			}
+		}
+		
+		Random random = new Random();
+		
+		while (true) {
+			
+			int i = random.nextInt(players.size());
+			
+			if (!wentThisRound.contains(players.get(i))) {
+				wentThisRound.add(players.get(i));
+				player1 = players.get(i);
+				break;
+			}
+		}
+		
+		while (true) {
+			
+			if (wentThisRound.size() == players.size()) {
+				break;
+			}
+			
+			int i = random.nextInt(players.size());
+			
+			if (!wentThisRound.contains(players.get(i))) {
+				
+				wentThisRound.add(players.get(i));
+				player2 = players.get(i);
+				break;
+			}
+		}
+	}
+	
+	//decides who won the round based on vote counts
+	public String decideRoundWinner() {
+		return votes1 > votes2 ? player1 : player2;
+	}
+	
+	//After round winner is decided, the consequences of the round are put into effect.
+	//TODO: code method to take the losing card and give it to the winner to edit
+	public void RoundConsequences() {
+		String winner = decideRoundWinner();
+	}
+	
+	//TODO did not include:
+	//addPlayer()
+	//addSpectator()
+	//removePlayer()
+	//removeSpecator()
+	//quit()
+	//main()
+	//at the moment it's not totally clear how players/spectators will be added to
+	//games, but it will probably be through websockets. if there are functions to add them,
+	//(which would end up being very simple anyway), they would be private
+	//we're also not sure how stopping/ending/quitting a game will work. the game
+	//might notify the manager, which will do it
+	//main() may come back, or it may be spread out across various functions/stuff in handleMessage()
+	//also we need to figure out how cards will work. will we have List<Card>? instance of Dealer?
 }
