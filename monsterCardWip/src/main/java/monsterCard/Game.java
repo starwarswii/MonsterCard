@@ -206,7 +206,7 @@ public class Game {
 		//need a distinction between player/user and socket connection
 		
 		//when socket closes, we still have user, but they're "away" or somthing
-		//add button to leave room, this removes player from room
+		//add button to leave game, this removes player from game
 		
 		System.out.println(response);
 		
@@ -225,10 +225,10 @@ public class Game {
 			//websocket -> (sessionId, isSpectator)
 			//then sessionid -> player or sessionid -> specator
 			
-			//TODO need to add support for users leaving the room
+			//TODO need to add support for users leaving the game
 			//could be done with certain message, or timeout?
-			//what should happen when owner leaves room?
-			//could close room, or assign another owner, or somthing
+			//what should happen when owner leaves game?
+			//could close game, or assign another owner, or somthing
 			
 			//TODO if problems arise, try using websocket session id instead as key
 			websocketToSessionId.put(session, sessionId);

@@ -2,15 +2,15 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>Room</title>
+		<title>Game</title>
 		
 		<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/js-cookie@2.2.0/src/js.cookie.js"></script>
-		<script src="/room.js"></script>
+		<script src="/game.js"></script>
 	</head>
 	
 	<body>
-		<h3>You're in Room $id</h3>
+		<h3>You're in Game $id</h3>
 		
 		<div id="timer">not running</div>
 		<button id="start">start</button>
@@ -23,11 +23,11 @@
 		<input id="messageBox" placeholder="Type your message">
 		<button id="send">Send</button>
 
-		<!-- TODO encorporate? -->
+		<!-- TODO incorporate? -->
 		<!-- <ul id="userList"></ul> -->
 		
-		<!-- used to tell the javascript what room we're in -->
+		<!-- used to tell the javascript what game we're in -->
 		<!-- could probably also get the url to tell -->
-		<div id="roomId" style="display:none">$id</div>
+		<div id="gameId" style="display:none">$id</div>
 	</body>
 </html>

@@ -3,7 +3,7 @@ $(function() {
 	
 	console.log("ready");
 	
-	var roomId = $("#roomId").text();
+	var gameId = $("#gameId").text();
 	
 	//the server session id within Jetty. we need this as the id
 	//of Javalin WebSocket sessions doesnt match this (it's a totally different id format)
@@ -21,7 +21,7 @@ $(function() {
 	
 	//TODO could send id with parameters, instead of using path params
 	//might be better? i donno
-	$.get("/state/"+roomId, function(data) {
+	$.get("/state/"+gameId, function(data) {
 		console.log("did GET to /state, got back:", data);
 		
 		var isOwner = data.isOwner;
@@ -38,7 +38,7 @@ $(function() {
 		}
 	});
 	
-	var socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/room/"+roomId);
+	var socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
 	
 	function sendMessage(obj) {
 		socket.send(JSON.stringify(obj));

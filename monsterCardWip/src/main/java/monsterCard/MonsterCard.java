@@ -29,10 +29,10 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		
 		GameManager manager = new GameManager();
 		
-		app.get("/rooms", ctx -> {
+		app.get("/games", ctx -> {
 			System.out.println("id "+ctx.req.getSession().getId());
 			
-			System.out.println("rooms requested");
+			System.out.println("games requested");
 			ctx.json(manager.getGameIds());
 			//TODO i think you might be able to configure the json mapper
 			//this means its possible to define how an object is converted to json
@@ -54,7 +54,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		});
 		
 		
-		app.get("/room/:id", ctx -> {
+		app.get("/game/:id", ctx -> {
 			int id = Integer.parseInt(ctx.pathParam("id")); //for now assume id is always a valid int
 			if (manager.gameExists(id)) {
 				//render template
@@ -62,11 +62,11 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				HashMap<String, Object> model = new HashMap<>();
 				model.put("id", id);
 				
-				ctx.render("room.vtl", model);
+				ctx.render("game.vtl", model);
 				
 				
 			} else {
-				ctx.result("no room with id "+id+" exists");
+				ctx.result("no game with id "+id+" exists");
 			}
 		});
 		
@@ -99,8 +99,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 			}
 		});
 		
-		//TODO change all "room" language to "game"
-		app.ws("/room/:id", ws -> {
+		app.ws("/game/:id", ws -> {
 			
 			ws.onConnect(session -> {
 				int id = Integer.parseInt(session.pathParam("id"));
