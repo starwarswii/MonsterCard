@@ -1,13 +1,13 @@
 package monsterCard;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class GameManager {
 	
 	int nextGameId;
-	//TODO make all maps/ list the generic type?, e.g. Map
-	HashMap<Integer, Game> games;
+	Map<Integer, Game> games;
 	
 	public GameManager() {
 		nextGameId = 1;

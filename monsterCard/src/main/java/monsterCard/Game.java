@@ -3,6 +3,7 @@ package monsterCard;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Timer;
@@ -15,11 +16,11 @@ public class Game {
 	static final int TIMER_LENGTH = 20;
 	
 	//TODO make websocket manager thing
-	//eh maybe not now, depeneds on need?
+	//eh maybe not now, depends on need?
 	//on join, adds to list
-	//on leave, removes from lisr
+	//on leave, removes from list
 	//could also handle "this is who i am" messages
-	//and could even use it to definbe a custom "command" language
+	//and could even use it to define a custom "command" language
 	//person says thing, we do this.
 	
 	String ownerId; //session id of owner
@@ -33,17 +34,17 @@ public class Game {
 	Timer timer;
 	TimerTask timerTask;
 	
-	HashMap<WsSession, String> websocketToSessionId;
-	HashMap<String, User> sessionIdToUser;
+	Map<WsSession, String> websocketToSessionId;
+	Map<String, User> sessionIdToUser;
 	
 	String player1; //session id of active player 1
-	int votes1; // votes they have recieved
+	int votes1; // votes they have received
 	
 	String player2;
 	int votes2;
 	
 	int currentRound; //the current round
-	ArrayList<String> wentThisRound; //list of player session ids that already went this round
+	List<String> wentThisRound; //list of player session ids that already went this round
 	
 	public Game(String ownerId, String name) {
 		this.ownerId = ownerId;
@@ -121,7 +122,6 @@ public class Game {
 	
 	public void stopTimer() {
 		timerTask.cancel();
-		//timer.purge(); //TODO really not necessary, see javadoc
 		
 		timerRunning = false;
 		timerValue = TIMER_LENGTH;
@@ -137,7 +137,7 @@ public class Game {
 	
 	//helper function that lets you write stuff like
 	//sendToAll(x -> x.put("key", "value"));
-	//it is essentally just calling the constructor and toString for you
+	//it is essentially just calling the constructor and toString for you
 	//TODO i'd say convert things to use this method, or remove it
 	//it has small overhead
 	public void sendToAll(Function<JSONObject, JSONObject> x) {
@@ -156,7 +156,7 @@ public class Game {
 		for (User user : sessionIdToUser.values()) {
 			
 			//TODO maybe better data structure than having to do this
-			//TODO could probably improve with u.isPlayer() or somthing
+			//TODO could probably improve with u.isPlayer() or something
 			
 			if (user instanceof Player) {
 				players.add((Player)user);
@@ -205,7 +205,7 @@ public class Game {
 		//TODO have sockets tell you their session id on connection, use that to figure out who it is
 		//need a distinction between player/user and socket connection
 		
-		//when socket closes, we still have user, but they're "away" or somthing
+		//when socket closes, we still have user, but they're "away" or something
 		//add button to leave game, this removes player from game
 		
 		System.out.println(response);
@@ -221,14 +221,14 @@ public class Game {
 			//with chat message
 			//or maybe that behavior should be somewhere else
 			
-			//TODO could specifiy if player or spectator,
+			//TODO could specify if player or spectator,
 			//websocket -> (sessionId, isSpectator)
-			//then sessionid -> player or sessionid -> specator
+			//then sessionid -> player or sessionid -> spectator
 			
 			//TODO need to add support for users leaving the game
 			//could be done with certain message, or timeout?
 			//what should happen when owner leaves game?
-			//could close game, or assign another owner, or somthing
+			//could close game, or assign another owner, or something
 			
 			//TODO if problems arise, try using websocket session id instead as key
 			websocketToSessionId.put(session, sessionId);
