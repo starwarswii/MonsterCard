@@ -11,64 +11,75 @@ public class Dealer {
 	
 	//Default constructor, populates the Dealer with blank Card objects
 	public Dealer() {
-		store = new ArrayList<Card>();
-		for(int i=0;i<9;i++) {
+		int blankCardCount = 10;
+		
+		store = new ArrayList<>();
+		dealt = new ArrayList<>();
+		
+		for (int i = 0; i < blankCardCount; i++) {
 			store.add(new Card());
 		}
-		dealt = new ArrayList<Integer>();
 	}
 	
-	//May want another constructor that populates the Dealer with Cards taken in from the database
+	//TODO May want another constructor that populates the Dealer with Cards taken in from the database?
 	
 	//Adds all cards from a list of cards to storage
-	public void addCards(List<Card> new_cards) {
-		for(int i = 0; i < new_cards.size(); i++) {
-			store.add(new_cards.get(i));
-		}
+	public void addCards(List<Card> newCards) {
+		store.addAll(newCards);
 	}
 	
 	//Adds new blank Cards to 'store'
-	public void addCards(int new_cards) {
-		for(int i = 0; i < new_cards; i++) {
+	public void addCards(int count) {
+		for (int i = 0; i < count; i++) {
 			store.add(new Card());
 		}
 	}
 	
 	//Provides a List containing random Card objects of length 'num'
-	//When cards are dealt to players, their index in 'store' is added to 'dealt' so that we know that Card is taken
+	//When cards are dealt to players, their index in 'store' is added to 'dealt'
+	//so that we know that Card is taken
 	//Stops dealing cards if all Cards have been dealt, and deals the rest as blank cards
 	public List<Card> getCards(int num) {
-		List<Card> tmp = new ArrayList<Card>();
-		Random rand = new Random();
-		int index = 0;
-		for(int i = 0; i < num; i++) {
+		
+		List<Card> temp = new ArrayList<>();
+		Random random = new Random();
+		
+		for (int i = 0; i < num; i++) {
+			
 			//Adds 10 new blank Cards to deal out
-			if(dealt.size()==store.size()) {
-				this.addCards(10);
+			if (dealt.size() == store.size()) {
+				addCards(10);
 			}
-			index = rand.nextInt(store.size());
-			if(!dealt.contains(index)) {
-				tmp.add(store.get(index));
+			
+			int index = random.nextInt(store.size());
+			
+			//TODO something looks fishy here. we don't add a card if the random index
+			//is already in dealt? shouldn't we pick another number?
+			if (!dealt.contains(index)) {
+				
+				temp.add(store.get(index));
 				dealt.add(index);
-			}else {
+				
+			} else {
 				i--;
 			}
 		}
-		return tmp;
+		
+		return temp;
 	}
 	
 	//Returns Cards that were previously dealt out by getCards()
-	public void returnCard(List<Card> hand) throws NoSuchElementException{
-		for(int i = 0; i< hand.size(); i++) {
+	public void returnCard(List<Card> hand) throws NoSuchElementException {
+		
+		for (int i = 0; i < hand.size(); i++) {
 
 			//First get the index of the card in the store
-			int index_of_card = store.indexOf(hand.get(i));
+			int index = store.indexOf(hand.get(i));
 
-			if(index_of_card == -1)  {
+			if (index == -1)  {
 				throw new NoSuchElementException("Trying to return card that wasn't originally in deck");
-			}else{
-				//Remove the card. .Remove() only removes object if it exists
-				dealt.remove(index_of_card);
+			} else {
+				dealt.remove(index);
 			}
 		}
 	}

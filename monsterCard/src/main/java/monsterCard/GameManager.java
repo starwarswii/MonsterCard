@@ -1,43 +1,49 @@
 package monsterCard;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 public class GameManager {
-	Map<String,Integer> name_to_id;
-	Map<Integer,Game> games;
-	Map<String,String> socket_to_id;
-	int num_games;
 	
-	//Default constructor
+	int nextGameId;
+	//TODO make all maps/ list the generic type?, e.g. Map
+	HashMap<Integer, Game> games;
+	
 	public GameManager() {
-		games = new HashMap<Integer,Game>();
-		name_to_id = new HashMap<String,Integer>();
-		socket_to_id = new HashMap<String,String>();
-		num_games = 0;
+		nextGameId = 1;
+		games = new HashMap<>();
 	}
 	
-	//Takes a user provided String, creates a new game with that String as its name, and adds it to the HashMap 'games'
-	//Then, increments num_games
-	//TODO: Unsure if the 'main' function of the new Game will start running automatically from here or not. Should look into it
-	public void addGame(String name) {
-		num_games++;
-		games.put(num_games, new Game(name,num_games));
-		name_to_id.put(name,num_games);
+	public int createGame(String owner) {
+		return createGame(owner, null);
 	}
 	
-	//Takes in input of the player's name, their session ID, and the name of the game they want to join
-	//Passes information to the correct game for the player to be added to that game
-	public void addPlayertoGame(String name, String ID, String game_name) {
-		games.get(name_to_id.get(game_name)).addPlayer(name, ID);
-		//TODO: Change the user's web page such that they load into the game on their end
-		//Should maybe done via HTML in a separate file, unsure how it links to this function
+	public int createGame(String owner, String name) {
+		if (name == null) {
+			name = "Game "+nextGameId;
+		}
+		
+		games.put(nextGameId, new Game(owner, name));
+		return nextGameId++; //increment, but return the old value
+	}	
+	
+	public Game getGame(int id) {
+		return games.get(id);
 	}
 	
-	//Removes a terminated game specified by 'ID' from 'games', and decrements num_games
-	public void endGame(int ID) {
-		games.remove(ID-1);
-		num_games--;
+	public boolean gameExists(int id) {
+		return games.containsKey(id);
 	}
+	
+	public Integer[] getGameIds() {
+		Set<Integer> set = games.keySet();
+		return set.toArray(new Integer[set.size()]);
+	}
+	
+	//TODO did not include:
+	//addPlayerToGame()
+	//endGame()
+	//it might make more sense to have these operations on games
+	//and use manager.getGame(x).addPlayer() or whatever
+	//then again, its the "game" manager, so maybe it should have some proxy methods
 }
-
