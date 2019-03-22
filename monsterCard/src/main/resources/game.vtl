@@ -6,16 +6,30 @@
 		
 		<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/js-cookie@2.2.0/src/js.cookie.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.4.6/fabric.min.js"></script>
 		<script src="/game.js"></script>
 	</head>
-	
+
 	<body>
 		<h3>You're in Game $id</h3>
-		
+
 		<div id="timer">not running</div>
 		<button id="start">start</button>
-		
-		
+
+        <br>
+        <canvas id="drawCanvas" width="500" height="500" style="border:1px solid black"></canvas>
+        <div style="display: inline-block; margin-left: 10px; margin-top: 10px">
+            <button id="clearcanvas">Clear</button><br>
+            <div id="drawing_modeoptions"></div>
+            <label for="drawing_linewidth">Line width:</label>
+            <span class="info">30</span><input type="range" value="30" min="0" max="150" id="drawing_linewidth"><br>
+
+            <label for="drawing_color">Line color:</label>
+            <input type="color" value="#000000" id="drawing_color"><br>
+        </div>
+        <button id="save">Send to Server</button>
+		<canvas id="displayCanvas" width="500" height="500" style="border:1px solid black"></canvas>
+
 		<br>
 		<div id="chat"></div>
 		<br>

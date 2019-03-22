@@ -269,7 +269,7 @@ public class Game {
 					.put("sender", "someone")
 					.put("message", message)
 				.toString());
-				
+
 				break;
 				
 			case "timer":
@@ -296,6 +296,19 @@ public class Game {
 						System.out.println("unrecognized timer command "+command);
 				}
 				
+				break;
+
+			case "image":
+
+				String imageSVG = map.getString("img");
+
+				//TODO handle card creation adding to dealer deck
+
+				sendToAll(new JSONObject()
+					.put("type", "image")
+					.put("img", imageSVG)
+				.toString());
+
 				break;
 				
 			default:
