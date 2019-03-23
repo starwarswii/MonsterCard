@@ -258,6 +258,9 @@ $(function() {
 		});
 	});
 
+	// TODO fix max message size
+	// message size too large for 536
+	// https://stackoverflow.com/questions/17497173/jetty-9-websocket-server-max-message-size-on-session
 	$save.click(function() { // converts the canvas to SVG and sends it to the server
 		console.log("image sent:")
 		// console.log(drawingCanvas.toSVG());
