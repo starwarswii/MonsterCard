@@ -27,6 +27,7 @@ $(function() {
 	var $chat = $("#chat");
 	var $messageBox = $("#messageBox");
 	var $send = $("#send");
+	var username = prompt("Please select a username", "someone");
 
 	// change state
 	var $next = $("#next");
@@ -157,7 +158,11 @@ $(function() {
 		console.log(event);
 		
 		console.log("sending whoiam message");
-		sendMessage({type: "whoiam", sessionId: sessionId});
+		sendMessage({
+			type: "whoiam",
+			username: username,
+			sessionId: sessionId
+		});
 	};
 	
 	socket.onclose = function(event) {
@@ -253,14 +258,14 @@ $(function() {
 				console.log("unknown message type ", type);
 		}
 	};
-	
+
 	$send.click(function() {
 		var message = $messageBox.val();
 		
 		if (message !== "") {
 			sendMessage({
 				type: "chat",
-				//sender: "someone",
+				sender: username,
 				message: message
 			});
 			
