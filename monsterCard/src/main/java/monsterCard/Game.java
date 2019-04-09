@@ -338,7 +338,9 @@ public class Game {
 				break;
 				
 			case "change state":
+				//Update the internal game state
 				getNextState();
+				//Send the new game state to all clients
 				sendToAll(new JSONObject()
 						.put("type", "change state")
 						.put("value", currentState.name())
