@@ -402,8 +402,7 @@ public class Game {
 				break;
 		}
 			sendToAll(new JSONObject()
-					.put("type", "state")
-					.put("event", "change")
+					.put("type", "change state")
 					.put("value", currentState)
 				.toString());
 		}
