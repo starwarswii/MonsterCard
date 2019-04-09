@@ -1,8 +1,3 @@
-var $wrapper = $("#wrapper");
-var $voteButtons = $("#voteButtons");
-var $canvasControl = $("#canvasControls");
-var $chat = $("#chat");
-
 function clearChat($chat) {
     $chat.empty();
 }
