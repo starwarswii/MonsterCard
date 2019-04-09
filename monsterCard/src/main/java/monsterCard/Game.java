@@ -222,6 +222,8 @@ public class Game {
 		if (type.equals("whoiam")) {
 			String sessionId = parseSessionId(map.getString("sessionId"));
 			
+			String username = map.getString("username");
+			
 			//TODO let everyone else know a user joined?
 			//with chat message
 			//or maybe that behavior should be somewhere else
@@ -239,7 +241,7 @@ public class Game {
 			websocketToSessionId.put(session, sessionId);
 			
 			if (!sessionIdToUser.containsKey(sessionId)) {
-				sessionIdToUser.put(sessionId, new Player("temp name", sessionId));
+				sessionIdToUser.put(sessionId, new Player(username, sessionId));
 			}
 			//TODO handle different user types (player vs spectator)
 			//maybe dont set user type immediately and let them send a message indicating what
@@ -259,6 +261,9 @@ public class Game {
 			case "chat":
 				
 				String message = map.getString("message");
+				String sender = map.getString("sender");
+				//TODO could look up websocket id to get username, instead of trusting the given sender
+				
 				
 				//TODO handle senders
 				//could either send along sender
@@ -271,7 +276,7 @@ public class Game {
 				
 				sendToAll(new JSONObject()
 					.put("type", "chat")
-					.put("sender", "someone")
+					.put("sender", sender)
 					.put("message", message)
 				.toString());
 
