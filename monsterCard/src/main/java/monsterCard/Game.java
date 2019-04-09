@@ -422,7 +422,7 @@ public class Game {
 		//proceed with a given order
 		//Done when a change state message is sent
 		switch(currentState) {
-			case BEGIN_GAME:
+			case BEFORE_GAME:
 				currentState = State.DRAWING;
 			case DRAWING:
 				currentState = State.VOTING;
