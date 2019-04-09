@@ -8,14 +8,14 @@ $(function() {
 
 
 	// CANVAS CODE =====================================================================================================
-
 	// intilize drawing canvas, allows drawing
-	var drawingCanvas = new fabric.Canvas('drawCanvas', {
+	var c1 = new fabric.Canvas('c1', {
 		isDrawingMode: true
 	});
-
 	// intilize display canvas, unable to edit only displays image of what was retrieved from server
-	var displayCanvas = new fabric.Canvas('displayCanvas', {});
+	var c2 = new fabric.StaticCanvas('c2', {
+		selectable: false
+	});
 
 	var undo = []; // undo stack
 	var redo = []; // redo stack
@@ -23,18 +23,18 @@ $(function() {
 	var drawing = true;
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
-	drawingCanvas.on("object:added", function () {
+	c1.on("object:added", function () {
 		if(drawing) {
 			redo = []; // clears all redo states
 			undo.push(state); // adds the last state before drawing to the stack
-			state = JSON.stringify(drawingCanvas); // updates the state for undomanager
+			state = JSON.stringify(c1); // updates the state for undomanager
 		}
 	});
-	drawingCanvas.on("object:modified", function () {
+	c1.on("object:modified", function () {
 		if(drawing) {
 			redo = [];
 			undo.push(state);
-			state = JSON.stringify(drawingCanvas);
+			state = JSON.stringify(c1);
 		}
 	});
 
@@ -42,10 +42,10 @@ $(function() {
 	function replay(playStack, saveStack) {
 		saveStack.push(state);
 		state = playStack.pop();
-		drawingCanvas.clear();
+		c1.clear();
 		drawing = false;
-		drawingCanvas.loadFromJSON(state, function() {
-			drawingCanvas.renderAll();
+		c1.loadFromJSON(state, function() {
+			c1.renderAll();
 		});
 		drawing = true;
 	}
@@ -62,11 +62,11 @@ $(function() {
 	// TODO change from keycode to key
 	document.addEventListener('keydown', function(event) {
 		if(event.ctrlKey) {
-			if (event.keyCode == 90) { // undo
+			if (event.keyCode === 90) { // undo
 				if(undo.length > 0) { // won't undo if there is no undo state left
 					replay(undo, redo);
 				}
-			} else if (event.keyCode == 89) { // redo
+			} else if (event.keyCode === 89) { // redo
 				if(redo.length > 0) { // won't redo if there is no redo state left
 					replay(redo, undo);
 				}
@@ -81,29 +81,65 @@ $(function() {
 
 	// clear canvas button
 	$drawingClear.click(function() {
-		drawingCanvas.clear();
+		c1.clear();
 	});
 
 	// edits the brush color
 	$drawingColor.on("change", function() {
-		drawingCanvas.freeDrawingBrush.color = $drawingColor.val();
+		c1.freeDrawingBrush.color = $drawingColor.val();
 	});
 
 	// edits the brush width
 	$drawingLineWidth.on("change", function() {
-		drawingCanvas.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
+		c1.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
 		this.previousSibling.innerHTML = $drawingLineWidth.val();
 	});
 
 	// updates the brush when free drawing is turned on
-	if (drawingCanvas.freeDrawingBrush) {
-		drawingCanvas.freeDrawingBrush.color = $drawingColor.val();
-		drawingCanvas.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
+	if (c1.freeDrawingBrush) {
+		c1.freeDrawingBrush.color = $drawingColor.val();
+		c1.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
 	}
 	// END OF CANVAS CODE ==============================================================================================
 
+	// STATES ==========================================================================================================
+
+	function clearChat() {
+		$chat.empty();
+	}
+
+	function initializeStartGame() {
+		clearChat();
+		$wrapper.hide();
+		$canvasControl.hide();
+		$voteButtons.hide();
+	}
+
+	function initializeDrawing() {
+		clearChat();
+		c1.isDrawingMode = true;
+		$wrapper.show();
+		$canvasControl.show();
+		$voteButtons.hide();
+	}
+
+	function initializeVoting() {
+		clearChat();
+		c1.isDrawingMode = false;
+		$wrapper.show();
+		$canvasControl.hide();
+		$voteButtons.show();
+	}
+
+	function initializeEnd() {
+		clearChat();
+		$wrapper.hide();
+		$canvasControl.hide();
+		$voteButtons.hide();
+	}
 
 
+	// END OF STATES ===================================================================================================
 
 	//the server session id within Jetty. we need this as the id
 	//of Javalin WebSocket sessions doesnt match this (it's a totally different id format)
@@ -121,6 +157,12 @@ $(function() {
 	
 	var $messageBox = $("#messageBox");
 	var $send = $("#send");
+
+	var $next = $("#next");
+
+	var $wrapper = $("#wrapper");
+	var $voteButtons = $("#voteButtons");
+	var $canvasControl = $("#canvasControls");
 	
 	//TODO could send id with parameters, instead of using path params
 	//might be better? i donno
@@ -218,12 +260,33 @@ $(function() {
 
 				var displayImage = map.img;
 
-				loadImg(displayCanvas, displayImage);
+				loadImg(c2, displayImage);
+
+				break;
+
+			case "state":
+				var id = map.id;
+
+				switch (id) {
+					case "voting":
+						initializeVoting();
+						break;
+					case "drawing":
+						initializeDrawing();
+						break;
+					case "end":
+						initializeEnd();
+						break;
+					default:
+						initializeStartGame();
+				}
 
 				break;
 
 			default:
-				console.log("unknown message type ", type);	
+				console.log("unknown message type ", type);
+
+
 		}
 	};
 	
@@ -268,8 +331,33 @@ $(function() {
 		// when button is clicked, we send the image SVG to the server to be stored
 		sendMessage({
 			type: "image",
-			img: drawingCanvas.toSVG()
+			img: c1.toSVG()
 		});
 	});
-	
+
+	var temp = 0;
+
+	$next.click(function() {
+
+		switch(temp) {
+			case 0:
+				temp++;
+				initializeStartGame();
+				break;
+			case 1:
+				temp++;
+				initializeDrawing();
+				break;
+			case 2:
+				temp++;
+				initializeVoting();
+				break;
+			case 3:
+				temp = 0;
+				initializeEnd();
+				break;
+		}
+
+	});
+
 });

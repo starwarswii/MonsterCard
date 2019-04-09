@@ -12,6 +12,7 @@ import java.util.function.Function;
 import org.json.JSONObject;
 import io.javalin.websocket.WsSession;
 
+
 public class Game {
 	static final int TIMER_LENGTH = 20;
 	
@@ -45,6 +46,10 @@ public class Game {
 	
 	int currentRound; //the current round
 	List<String> wentThisRound; //list of player session ids that already went this round
+	
+	State currentState;
+	
+	
 	
 	public Game(String ownerId, String name) {
 		this.ownerId = ownerId;
@@ -385,6 +390,14 @@ public class Game {
 	//TODO: code method to take the losing card and give it to the winner to edit
 	public void RoundConsequences() {
 		String winner = decideRoundWinner();
+	}
+	
+	public void getNextState() {
+		//if beforeGame, then drawing, if drawing, then voting, if voting, endGame
+		//Done when a change state message is sent
+		//switch(current_state) {
+			//default:
+	//	}
 	}
 	
 	//TODO did not include:
