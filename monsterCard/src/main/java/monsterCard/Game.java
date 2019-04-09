@@ -325,7 +325,7 @@ public class Game {
 				getNextState();
 				sendToAll(new JSONObject()
 						.put("type", "change state")
-						.put("value", currentState)
+						.put("value", currentState.name())
 					.toString());
 				
 				break;
