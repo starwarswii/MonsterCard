@@ -18,6 +18,12 @@ $(function() {
 	
 	var $messageBox = $("#messageBox");
 	var $send = $("#send");
+
+
+	var username = prompt("Please select a username", "someone");
+
+
+
 	
 	//TODO could send id with parameters, instead of using path params
 	//might be better? i donno
@@ -47,9 +53,10 @@ $(function() {
 	socket.onopen = function(event) {
 		console.log("Websocket opened");
 		console.log(event);
+
 		
 		console.log("sending whoiam message");
-		sendMessage({type: "whoiam", sessionId: sessionId});
+		sendMessage({type: "whoiam", username: username, sessionId: sessionId});
 	};
 	
 	socket.onclose = function(event) {
@@ -122,7 +129,7 @@ $(function() {
 		if (message !== "") {
 			sendMessage({
 				type: "chat",
-				//sender: "someone",
+				sender: username,
 				message: message
 			});
 			
