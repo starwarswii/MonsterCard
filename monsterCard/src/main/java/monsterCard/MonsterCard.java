@@ -71,6 +71,13 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		});
 		
 		app.get("/state/:id", ctx -> {
+			//TODO all this stuff should probably live in Game
+			//and then moved to the websocket handling class
+			//that class might be better handling arbitrary messages
+			//both websocket and http
+			//and then this could be a single endpoint, but could post json
+			//like post to /api with data {type:status, game:1}
+			
 			int id = Integer.parseInt(ctx.pathParam("id"));
 			if (manager.gameExists(id)) {
 				//build map and return
@@ -87,6 +94,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				
 				//TODO possible race condition, timerRunning could change
 				//between this call and the next
+				//unlikely though
 				map.put("isRunning", game.timerRunning);
 				if (game.timerRunning) {
 					map.put("value", game.timerValue);
