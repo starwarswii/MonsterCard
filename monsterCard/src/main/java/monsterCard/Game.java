@@ -338,12 +338,36 @@ public class Game {
 				break;
 				
 			case "change state":
+				//Update the internal game state
 				getNextState();
+				//Send the new game state to all clients
 				sendToAll(new JSONObject()
 						.put("type", "change state")
 						.put("value", currentState.name())
 					.toString());
 				
+				break;
+				
+			case "vote":
+				//Get the value representing the card the user intended to vote for, and increment its vote count
+				int vote = map.getInt("value");
+				if(vote==1) {
+					votes1++;
+				}else {
+					votes2++;
+				}
+				//Send the updated vote counts to all clients
+				sendToAll(new JSONObject()
+						.put("type", "vote")
+						.put("card", 1)
+						.put("count", votes1)
+					.toString());
+				
+				sendToAll(new JSONObject()
+						.put("type", "vote")
+						.put("card", 2)
+						.put("count", votes2)
+					.toString());
 				break;
 				
 			default:
