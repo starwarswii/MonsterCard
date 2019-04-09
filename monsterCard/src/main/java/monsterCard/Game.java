@@ -14,6 +14,22 @@ import io.javalin.websocket.WsSession;
 
 
 public class Game {
+	
+	enum State {
+		
+		BEFORE_GAME("before"),
+		DRAWING("drawing"),
+		VOTING("voting"),
+		END_GAME("end");
+			
+		String name;
+			
+		State(String name) {
+			this.name = name;
+		}
+	}
+	
+	
 	static final int TIMER_LENGTH = 20;
 	
 	//TODO make websocket manager thing
