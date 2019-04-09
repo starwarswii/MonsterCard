@@ -321,6 +321,15 @@ public class Game {
 
 				break;
 				
+			case "change state":
+				getNextState();
+				sendToAll(new JSONObject()
+						.put("type", "change state")
+						.put("value", currentState)
+					.toString());
+				
+				break;
+				
 			default:
 				System.out.println("unrecognized message type "+type);
 			
@@ -405,11 +414,6 @@ public class Game {
 				currentState = State.END_GAME;
 			case END_GAME:
 				break;
-		}
-			sendToAll(new JSONObject()
-					.put("type", "change state")
-					.put("value", currentState)
-				.toString());
 		}
 	}
 	
