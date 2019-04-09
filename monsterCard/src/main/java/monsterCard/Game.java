@@ -401,6 +401,12 @@ public class Game {
 			case END_GAME:
 				break;
 		}
+			sendToAll(new JSONObject()
+					.put("type", "state")
+					.put("event", "change")
+					.put("value", currentState)
+				.toString());
+		}
 	}
 	
 	//TODO did not include:
