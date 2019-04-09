@@ -1,10 +1,40 @@
 $(function() {
 	//we run this code on page load
-	
 	console.log("ready");
 	
 	var gameId = $("#gameId").text();
 
+	//the server session id within Jetty. we need this as the id
+	//of Javalin WebSocket sessions doesnt match this (it's a totally different id format)
+	//so we will send this id with each message we send to the server
+	//so the server knows who we are
+	//TODO check if this is undefined/null/whatever, and show an error, and refresh
+	var sessionId = Cookies.get("JSESSIONID");
+
+	// drawing canvas controls
+	var $drawingClear = $("#clearcanvas");
+	var $drawingColor = $("#drawing_color");
+	var $drawingLineWidth = $("#drawing_linewidth");
+
+	// image sender
+	var $save = $("#save");
+
+	// timer items
+	var $start = $("#start");
+	var $timer = $("#timer");
+
+	// chat items
+	var $chat = $("#chat");
+	var $messageBox = $("#messageBox");
+	var $send = $("#send");
+
+	// change state
+	var $next = $("#next");
+
+	// used to hide and show items
+	var $wrapper = $("#wrapper");
+	var $voteButtons = $("#voteButtons");
+	var $canvasControl = $("#canvasControls");
 
 
 	// CANVAS CODE =====================================================================================================
@@ -59,7 +89,6 @@ $(function() {
 		});
 	}
 
-	// TODO change from keycode to key
 	document.addEventListener('keydown', function(event) {
 		if(event.ctrlKey) {
 			if (event.keyCode === 90) { // undo
@@ -73,11 +102,6 @@ $(function() {
 			}
 		}
 	});
-
-	// drawing canvas controls
-	var $drawingClear = $("#clearcanvas");
-	var $drawingColor = $("#drawing_color");
-	var $drawingLineWidth = $("#drawing_linewidth");
 
 	// clear canvas button
 	$drawingClear.click(function() {
@@ -102,67 +126,6 @@ $(function() {
 	}
 	// END OF CANVAS CODE ==============================================================================================
 
-	// STATES ==========================================================================================================
-
-	function clearChat() {
-		$chat.empty();
-	}
-
-	function initializeStartGame() {
-		clearChat();
-		$wrapper.hide();
-		$canvasControl.hide();
-		$voteButtons.hide();
-	}
-
-	function initializeDrawing() {
-		clearChat();
-		c1.isDrawingMode = true;
-		$wrapper.show();
-		$canvasControl.show();
-		$voteButtons.hide();
-	}
-
-	function initializeVoting() {
-		clearChat();
-		c1.isDrawingMode = false;
-		$wrapper.show();
-		$canvasControl.hide();
-		$voteButtons.show();
-	}
-
-	function initializeEnd() {
-		clearChat();
-		$wrapper.hide();
-		$canvasControl.hide();
-		$voteButtons.hide();
-	}
-
-
-	// END OF STATES ===================================================================================================
-
-	//the server session id within Jetty. we need this as the id
-	//of Javalin WebSocket sessions doesnt match this (it's a totally different id format)
-	//so we will send this id with each message we send to the server
-	//so the server knows who we are
-	//TODO check if this is undefined/null/whatever, and show an error, and refresh
-	var sessionId = Cookies.get("JSESSIONID");
-	
-	var $start = $("#start");
-	var $timer = $("#timer");
-
-	var $save = $("#save"); // saves image and sends to server
-
-	var $chat = $("#chat");
-	
-	var $messageBox = $("#messageBox");
-	var $send = $("#send");
-
-	var $next = $("#next");
-
-	var $wrapper = $("#wrapper");
-	var $voteButtons = $("#voteButtons");
-	var $canvasControl = $("#canvasControls");
 	
 	//TODO could send id with parameters, instead of using path params
 	//might be better? i donno
@@ -256,18 +219,19 @@ $(function() {
 				
 				break;
 
+			// TODO: add number to which canvas to paint
 			case "image":
 
 				var displayImage = map.img;
-
+				// var canvasNum = map.num;
 				loadImg(c2, displayImage);
 
 				break;
 
-			case "state":
-				var id = map.id;
+			case "changeState":
+				var value = map.value;
 
-				switch (id) {
+				switch (value) {
 					case "voting":
 						initializeVoting();
 						break;
@@ -277,16 +241,16 @@ $(function() {
 					case "end":
 						initializeEnd();
 						break;
-					default:
+					case "before":
 						initializeStartGame();
+					default:
+						console.log("unknown, defaulting to end game")
+						initializeEnd();
 				}
-
 				break;
 
 			default:
 				console.log("unknown message type ", type);
-
-
 		}
 	};
 	
@@ -335,29 +299,10 @@ $(function() {
 		});
 	});
 
-	var temp = 0;
-
 	$next.click(function() {
-
-		switch(temp) {
-			case 0:
-				temp++;
-				initializeStartGame();
-				break;
-			case 1:
-				temp++;
-				initializeDrawing();
-				break;
-			case 2:
-				temp++;
-				initializeVoting();
-				break;
-			case 3:
-				temp = 0;
-				initializeEnd();
-				break;
-		}
-
+		sendMessage({
+			type: "changeState"
+		});
 	});
 
 });
