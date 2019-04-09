@@ -346,6 +346,14 @@ public class Game {
 				
 				break;
 				
+			case "vote":
+				//Get the value representing the card the user intended to vote for, and increment its vote count
+				int vote = map.getInt("value");
+				if(vote==1) {
+					votes1++;
+				}else {
+					votes2++;
+				}
 			default:
 				System.out.println("unrecognized message type "+type);
 			
