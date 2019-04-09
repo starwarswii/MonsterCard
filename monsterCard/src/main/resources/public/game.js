@@ -109,6 +109,7 @@ $(function() {
 	//of Javalin WebSocket sessions doesnt match this (it's a totally different id format)
 	//so we will send this id with each message we send to the server
 	//so the server knows who we are
+	//TODO check if this is undefined/null/whatever, and show an error, and refresh
 	var sessionId = Cookies.get("JSESSIONID");
 	
 	var $start = $("#start");
