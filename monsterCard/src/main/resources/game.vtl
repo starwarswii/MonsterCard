@@ -6,22 +6,68 @@
 		
 		<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/js-cookie@2.2.0/src/js.cookie.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.4.6/fabric.min.js"></script>
 		<script src="/game.js"></script>
 	</head>
-	
+
 	<body>
-		<h3>You're in Game $id</h3>
-		
-		<div id="timer">not running</div>
-		<button id="start">start</button>
-		
-		
+	    <h3>You're in Game $id</h3>
+
+        <button id="next">Next</button>
+        <br>
+        <br>
+        <div id="chat"></div>
+        <input id="messageBox" placeholder="Type your message">
+        <button id="send">Send</button>
+
+        <div id="timer">not running</div>
+        <button id="start">start</button>
+
+        <br><br>
+        <div id="voteButtons" style="display: inline-block">
+            <button id="vote1">Vote 1</button>
+            <button id="vote2">Vote 2</button>
+        </div>
+
+		<style type="text/css">
+			#wrapper {
+				display: inline-block;
+			}
+			#results-c1, #results-c2 {
+				width: 390px;
+				min-height: 40px;
+				display: inline-block;
+				padding: 5px;
+				margin: 0 6px 15px 0;
+				float: left;
+			}
+		</style>
+
 		<br>
-		<div id="chat"></div>
-		<br>
-		
-		<input id="messageBox" placeholder="Type your message">
-		<button id="send">Send</button>
+		<div id="wrapper">
+			<div id="results-c1">Drawing Canvas</div>​
+
+			<div id="canvasControls" style="display: inline-block; margin-left: 10px; margin-top: 10px">
+                <button id="clearcanvas">Clear</button>
+                <br>
+                <div id="drawing_modeoptions"></div>
+                <label for="drawing_linewidth">Line width:</label>
+                <span class="info">30</span><input type="range" value="30" min="0" max="150" id="drawing_linewidth">
+                <br>
+                <label for="drawing_color">Line color:</label>
+                <input type="color" value="#000000" id="drawing_color">
+                <br>
+                <button id="save">Send to Server</button>
+            </div>
+			<br>
+			<br>
+			<canvas id="c1" width="400" height="400" style="border:1px solid black"></canvas>
+            <br>
+            <div id="results-c2">Display Canvas</div>
+            <br>
+            <canvas id="c2" width="400" height="400" style="border:1px solid black"></canvas>
+		</div>
+        <br>
 
 		<!-- TODO incorporate? -->
 		<!-- <ul id="userList"></ul> -->
@@ -29,5 +75,6 @@
 		<!-- used to tell the javascript what game we're in -->
 		<!-- could probably also get the url to tell -->
 		<div id="gameId" style="display:none">$id</div>
+
 	</body>
 </html>

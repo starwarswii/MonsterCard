@@ -12,6 +12,7 @@ import java.util.function.Function;
 import org.json.JSONObject;
 import io.javalin.websocket.WsSession;
 
+
 public class Game {
 	static final int TIMER_LENGTH = 20;
 	
@@ -45,6 +46,10 @@ public class Game {
 	
 	int currentRound; //the current round
 	List<String> wentThisRound; //list of player session ids that already went this round
+	
+	State currentState;
+	
+	
 	
 	public Game(String ownerId, String name) {
 		this.ownerId = ownerId;
@@ -217,6 +222,8 @@ public class Game {
 		if (type.equals("whoiam")) {
 			String sessionId = parseSessionId(map.getString("sessionId"));
 			
+			String username = map.getString("username");
+			
 			//TODO let everyone else know a user joined?
 			//with chat message
 			//or maybe that behavior should be somewhere else
@@ -234,7 +241,7 @@ public class Game {
 			websocketToSessionId.put(session, sessionId);
 			
 			if (!sessionIdToUser.containsKey(sessionId)) {
-				sessionIdToUser.put(sessionId, new Player("temp name", sessionId));
+				sessionIdToUser.put(sessionId, new Player(username, sessionId));
 			}
 			//TODO handle different user types (player vs spectator)
 			//maybe dont set user type immediately and let them send a message indicating what
@@ -254,6 +261,9 @@ public class Game {
 			case "chat":
 				
 				String message = map.getString("message");
+				String sender = map.getString("sender");
+				//TODO could look up websocket id to get username, instead of trusting the given sender
+				
 				
 				//TODO handle senders
 				//could either send along sender
@@ -266,10 +276,10 @@ public class Game {
 				
 				sendToAll(new JSONObject()
 					.put("type", "chat")
-					.put("sender", "someone")
+					.put("sender", sender)
 					.put("message", message)
 				.toString());
-				
+
 				break;
 				
 			case "timer":
@@ -296,6 +306,19 @@ public class Game {
 						System.out.println("unrecognized timer command "+command);
 				}
 				
+				break;
+
+			case "image":
+
+				String imageSVG = map.getString("img");
+
+				//TODO handle card creation adding to dealer deck
+
+				sendToAll(new JSONObject()
+					.put("type", "image")
+					.put("img", imageSVG)
+				.toString());
+
 				break;
 				
 			default:
@@ -367,6 +390,14 @@ public class Game {
 	//TODO: code method to take the losing card and give it to the winner to edit
 	public void RoundConsequences() {
 		String winner = decideRoundWinner();
+	}
+	
+	public void getNextState() {
+		//if beforeGame, then drawing, if drawing, then voting, if voting, endGame
+		//Done when a change state message is sent
+		//switch(current_state) {
+			//default:
+	//	}
 	}
 	
 	//TODO did not include:
