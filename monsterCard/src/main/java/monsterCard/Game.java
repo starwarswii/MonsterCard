@@ -388,11 +388,19 @@ public class Game {
 	}
 	
 	public void getNextState() {
-		//if beforeGame, then drawing, if drawing, then voting, if voting, endGame
+		//Switch from the current game state to the next. The game follows a set order of states, so we can just
+		//proceed with a given order
 		//Done when a change state message is sent
-		//switch(current_state) {
-			//default:
-	//	}
+		switch(currentState) {
+			case BEGIN_GAME:
+				currentState = State.DRAWING;
+			case DRAWING:
+				currentState = State.VOTING;
+			case VOTING:
+				currentState = State.END_GAME;
+			case END_GAME:
+				break;
+		}
 	}
 	
 	//TODO did not include:
