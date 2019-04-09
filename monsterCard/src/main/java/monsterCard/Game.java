@@ -359,15 +359,16 @@ public class Game {
 				//Send the updated vote counts to all clients
 				sendToAll(new JSONObject()
 						.put("type", "vote")
-						.put("value", 1)
+						.put("card", 1)
 						.put("count", votes1)
 					.toString());
 				
 				sendToAll(new JSONObject()
 						.put("type", "vote")
-						.put("value", 2)
+						.put("card", 2)
 						.put("count", votes2)
 					.toString());
+				break;
 				
 			default:
 				System.out.println("unrecognized message type "+type);
