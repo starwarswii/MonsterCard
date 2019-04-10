@@ -63,7 +63,7 @@ public class Game {
 	int currentRound; //the current round
 	List<String> wentThisRound; //list of player session ids that already went this round
 	
-	State currentState;
+	State currentState = State.BEFORE_GAME;
 	
 	
 	
@@ -337,13 +337,14 @@ public class Game {
 
 				break;
 				
-			case "change state":
+			case "changeState":
 				//Update the internal game state
 				getNextState();
+				System.out.println(currentState.name);
 				//Send the new game state to all clients
 				sendToAll(new JSONObject()
-						.put("type", "change state")
-						.put("value", currentState.name())
+						.put("type", "changeState")
+						.put("value", currentState.name)
 					.toString());
 				
 				break;
@@ -448,10 +449,13 @@ public class Game {
 		switch(currentState) {
 			case BEFORE_GAME:
 				currentState = State.DRAWING;
+				break;
 			case DRAWING:
 				currentState = State.VOTING;
+				break;
 			case VOTING:
 				currentState = State.END_GAME;
+				break;
 			case END_GAME:
 				break;
 		}

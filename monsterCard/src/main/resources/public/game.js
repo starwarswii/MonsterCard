@@ -138,6 +138,7 @@ $(function() {
 		
 		if (!isOwner) {
 			$start.hide();
+			$next.hide();
 		}
 		
 		if (isRunning) {
@@ -145,6 +146,8 @@ $(function() {
 			$start.prop("disabled", true);
 			$timer.text(timerValue);
 		}
+
+		initializeStartGame($chat, $wrapper, $canvasControl, $voteButtons);	
 	});
 	
 	var socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
@@ -235,22 +238,24 @@ $(function() {
 
 			case "changeState":
 				var value = map.value;
+				console.log(value);
 
 				switch (value) {
 					case "voting":
-						initializeVoting();
+						initializeVoting($chat, $wrapper, $canvasControl, $voteButtons, c1);
 						break;
 					case "drawing":
-						initializeDrawing();
+						initializeDrawing($chat, $wrapper, $canvasControl, $voteButtons, c1);
 						break;
 					case "end":
-						initializeEnd();
+						initializeEnd($chat, $wrapper, $canvasControl, $voteButtons);
 						break;
 					case "before":
-						initializeStartGame();
+						initializeStartGame($chat, $wrapper, $canvasControl, $voteButtons);
+						break;
 					default:
 						console.log("unknown, defaulting to end game")
-						initializeEnd();
+						initializeEnd($chat, $wrapper, $canvasControl, $voteButtons);
 				}
 				break;
 
