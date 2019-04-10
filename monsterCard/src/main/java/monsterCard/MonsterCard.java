@@ -2,27 +2,32 @@ package monsterCard;
 
 import java.util.HashMap;
 import io.javalin.Javalin;
-import org.eclipse.jetty.server.session.DefaultSessionCache;
-import org.eclipse.jetty.server.session.NullSessionDataStore;
-import org.eclipse.jetty.server.session.SessionCache;
+import io.javalin.core.util.JettyServerUtil;
 import org.eclipse.jetty.server.session.SessionHandler;
 
+
 public class MonsterCard {//TODO add some logging like in timer demo
+	
+	//static final int MAX_MESSAGE_SIZE = 1000000000; //1GB
+	static final int MAX_MESSAGE_SIZE = Integer.MAX_VALUE;
 	
 	public static void main(String[] args) {
 		Javalin app = Javalin.create().enableStaticFiles("/public");
 
 		app.sessionHandler(() -> {
-			
-			SessionHandler handler = new SessionHandler();
+			SessionHandler  handler = JettyServerUtil.defaultSessionHandler();
+			//SessionHandler handler = new SessionHandler();
 			
 			handler.setHttpOnly(false);
 			
-			SessionCache cache = new DefaultSessionCache(handler);
-			cache.setSessionDataStore(new NullSessionDataStore());
-			handler.setSessionCache(cache);
-			
 			return handler;
+		});
+		
+		app.wsFactoryConfig(wsFactory -> {
+			wsFactory.getPolicy().setMaxTextMessageSize(MAX_MESSAGE_SIZE);
+			
+			//TODO probably only need the first one. we don't send binary messages
+			//wsFactory.getPolicy().setMaxBinaryMessageSize(MAX_MESSAGE_SIZE);
 		});
 		
 		//no redirect for root is needed, going to root (/), javalin serves index.html
@@ -137,6 +142,6 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		
 		
 		
-		app.start(7000);
+		app.start(80);
 	}
 }
