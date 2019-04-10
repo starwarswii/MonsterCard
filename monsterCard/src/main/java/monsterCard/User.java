@@ -4,10 +4,12 @@ package monsterCard;
 //could add a isPlayer abstract function, might be useful
 public class User {
 	
+	Integer hasVoted;
 	String name;
 	String sessionId; //TODO may not need this, depends on how we build the system
 	
 	public User(String name, String sessionId) {
+		hasVoted = -1;
 		this.name = name;
 		this.sessionId = sessionId;
 	}

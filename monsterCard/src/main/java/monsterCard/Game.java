@@ -337,6 +337,39 @@ public class Game {
 
 				break;
 				
+			case "change state":
+				//Update the internal game state
+				getNextState();
+				//Send the new game state to all clients
+				sendToAll(new JSONObject()
+						.put("type", "change state")
+						.put("value", currentState.name())
+					.toString());
+				
+				break;
+				
+			case "vote":
+				//Get the value representing the card the user intended to vote for, and increment its vote count
+				int vote = map.getInt("value");
+				if(vote==1) {
+					votes1++;
+				}else {
+					votes2++;
+				}
+				//Send the updated vote counts to all clients
+				sendToAll(new JSONObject()
+						.put("type", "vote")
+						.put("card", 1)
+						.put("count", votes1)
+					.toString());
+				
+				sendToAll(new JSONObject()
+						.put("type", "vote")
+						.put("card", 2)
+						.put("count", votes2)
+					.toString());
+				break;
+				
 			default:
 				System.out.println("unrecognized message type "+type);
 			
@@ -409,11 +442,19 @@ public class Game {
 	}
 	
 	public void getNextState() {
-		//if beforeGame, then drawing, if drawing, then voting, if voting, endGame
+		//Switch from the current game state to the next. The game follows a set order of states, so we can just
+		//proceed with a given order
 		//Done when a change state message is sent
-		//switch(current_state) {
-			//default:
-	//	}
+		switch(currentState) {
+			case BEFORE_GAME:
+				currentState = State.DRAWING;
+			case DRAWING:
+				currentState = State.VOTING;
+			case VOTING:
+				currentState = State.END_GAME;
+			case END_GAME:
+				break;
+		}
 	}
 	
 	//TODO did not include:
