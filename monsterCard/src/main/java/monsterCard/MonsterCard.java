@@ -142,6 +142,6 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		
 		
 		
-		app.start(80);
+		app.start(7000);
 	}
 }
