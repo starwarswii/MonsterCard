@@ -98,7 +98,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				map.put("isOwner", game.isOwner(user));
 				
 				//TODO possible race condition, timerRunning could change
-				//between this call and the next
+				//between this call and the next+
 				//unlikely though
 				map.put("isRunning", game.timerRunning);
 				if (game.timerRunning) {
