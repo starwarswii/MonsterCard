@@ -152,7 +152,10 @@ $(function() {
 	function sendMessage(obj) {
 		socket.send(JSON.stringify(obj));
 	}
-	
+
+
+	// TODO: Need to check if user already has a username. Essentially make it so that
+	// we dont ask for a username after a page refresh.
 	socket.onopen = function(event) {
 		console.log("Websocket opened");
 		console.log(event);
