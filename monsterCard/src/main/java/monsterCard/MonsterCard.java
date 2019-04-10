@@ -10,14 +10,13 @@ public class MonsterCard {//TODO add some logging like in timer demo
 	
 	//static final int MAX_MESSAGE_SIZE = 1000000000; //1GB
 	static final int MAX_MESSAGE_SIZE = Integer.MAX_VALUE;
+	static final long MAX_TIMEOUT = 3600000; // 1 hour
 	
 	public static void main(String[] args) {
 		Javalin app = Javalin.create().enableStaticFiles("/public");
 
 		app.sessionHandler(() -> {
 			SessionHandler  handler = JettyServerUtil.defaultSessionHandler();
-			//SessionHandler handler = new SessionHandler();
-			
 			handler.setHttpOnly(false);
 			
 			return handler;
@@ -25,9 +24,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		
 		app.wsFactoryConfig(wsFactory -> {
 			wsFactory.getPolicy().setMaxTextMessageSize(MAX_MESSAGE_SIZE);
-			
-			//TODO probably only need the first one. we don't send binary messages
-			//wsFactory.getPolicy().setMaxBinaryMessageSize(MAX_MESSAGE_SIZE);
+			wsFactory.getPolicy().setIdleTimeout(MAX_TIMEOUT);
 		});
 		
 		//no redirect for root is needed, going to root (/), javalin serves index.html
