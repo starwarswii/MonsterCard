@@ -7,6 +7,8 @@
 		<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/js-cookie@2.2.0/src/js.cookie.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/2.4.6/fabric.min.js"></script>
+		
+		<!-- note we need the slashes here as the files are located at root, not in the current game room -->
 		<script src="/states.js"></script>
 		<script src="/game.js"></script>
 		
@@ -27,6 +29,8 @@
 
 	<body>
 	    <h3>You're in Game $id</h3>
+
+		<div id="currentState">no state</div>
 
         <button id="next">Next</button>
         <br>

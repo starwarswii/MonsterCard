@@ -36,8 +36,13 @@ $(function() {
 	var $wrapper = $("#wrapper");
 	var $voteButtons = $("#voteButtons");
 	var $canvasControl = $("#canvasControls");
+	
+	var $currentState = $("#currentState");
 
 
+
+	
+	
 	// CANVAS CODE =====================================================================================================
 	// intilize drawing canvas, allows drawing
 	var c1 = new fabric.Canvas('c1', {
@@ -52,6 +57,47 @@ $(function() {
 	var redo = []; // redo stack
 	var state; // the last state of the drawingCanvas
 	var drawing = true;
+	
+	// STATES ==========================================================
+	
+	//TODO maybe put these functions in an object or something to keep them more separate maybe
+	//or not, this could be fine
+
+	function clearChat() {
+		//commented out for now as probably don't need to clear
+		//chat on state change
+	    //$chat.empty();
+	}
+
+	function initializeStartGame() {
+	    clearChat($chat);
+	    $wrapper.hide();
+	    $canvasControl.hide();
+	    $voteButtons.hide();
+	}
+
+	function initializeDrawing() {
+	    clearChat($chat);
+	    c1.isDrawingMode = true;
+	    $wrapper.show();
+	    $canvasControl.show();
+	    $voteButtons.hide();
+	}
+
+	function initializeVoting() {
+	    clearChat($chat);
+	    c1.isDrawingMode = false;
+	    $wrapper.show();
+	    $canvasControl.hide();
+	    $voteButtons.show();
+	}
+
+	function initializeEnd() {
+	    clearChat($chat);
+	    $wrapper.hide();
+	    $canvasControl.hide();
+	    $voteButtons.hide();
+	}
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
 	c1.on("object:added", function () {
@@ -147,7 +193,8 @@ $(function() {
 			$timer.text(timerValue);
 		}
 
-		initializeStartGame($chat, $wrapper, $canvasControl, $voteButtons);	
+		//TODO get current state
+		initializeStartGame();	
 	});
 	
 	var socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
@@ -157,8 +204,8 @@ $(function() {
 	}
 
 
-	// TODO: Need to check if user already has a username. Essentially make it so that
-	// we dont ask for a username after a page refresh.
+	//TODO: Need to check if user already has a username. Essentially make it so that
+	//we dont ask for a username after a page refresh.
 	socket.onopen = function(event) {
 		console.log("Websocket opened");
 		console.log(event);
@@ -242,24 +289,30 @@ $(function() {
 			case "changeState":
 				var value = map.value;
 				console.log(value);
-
+				
+				$currentState.text(value);
+				
 				switch (value) {
-					case "voting":
-						initializeVoting($chat, $wrapper, $canvasControl, $voteButtons, c1);
+					case "BEFORE_GAME":
+						initializeStartGame();
 						break;
-					case "drawing":
-						initializeDrawing($chat, $wrapper, $canvasControl, $voteButtons, c1);
+				
+					case "VOTING":
+						initializeVoting();
 						break;
-					case "end":
-						initializeEnd($chat, $wrapper, $canvasControl, $voteButtons);
+						
+					case "DRAWING":
+						initializeDrawing();
 						break;
-					case "before":
-						initializeStartGame($chat, $wrapper, $canvasControl, $voteButtons);
+						
+					case "END_GAME":
+						initializeEnd();
 						break;
+						
 					default:
-						console.log("unknown, defaulting to end game")
-						initializeEnd($chat, $wrapper, $canvasControl, $voteButtons);
+						console.log("unknown state", value);
 				}
+				
 				break;
 
 			default:
@@ -299,9 +352,7 @@ $(function() {
 		});
 	});
 
-	// TODO fix max message size
-	// message size too large for 536
-	// https://stackoverflow.com/questions/17497173/jetty-9-websocket-server-max-message-size-on-session
+
 	$save.click(function() { // converts the canvas to SVG and sends it to the server
 		console.log("image sent:")
 		// console.log(drawingCanvas.toSVG());

@@ -16,19 +16,11 @@ import io.javalin.websocket.WsSession;
 public class Game {
 	
 	enum State {
-		
-		BEFORE_GAME("before"),
-		DRAWING("drawing"),
-		VOTING("voting"),
-		END_GAME("end");
-			
-		String name;
-			
-		State(String name) {
-			this.name = name;
-		}
+		BEFORE_GAME,
+		DRAWING,
+		VOTING,
+		END_GAME
 	}
-	
 	
 	static final int TIMER_LENGTH = 20;
 	
@@ -63,7 +55,7 @@ public class Game {
 	int currentRound; //the current round
 	List<String> wentThisRound; //list of player session ids that already went this round
 	
-	State currentState = State.BEFORE_GAME;
+	State currentState;
 	
 	
 	
@@ -87,6 +79,8 @@ public class Game {
 		
 		currentRound = 0;
 		wentThisRound = new ArrayList<>();
+		
+		currentState = State.BEFORE_GAME;
 	}
 	
 	public boolean isOwner(String userId) {
@@ -339,36 +333,33 @@ public class Game {
 				
 			case "changeState":
 				//Update the internal game state
-				getNextState();
-				System.out.println(currentState.name);
+				changeToNextState();
+				
+				System.out.println(currentState.name());
+				
 				//Send the new game state to all clients
 				sendToAll(new JSONObject()
-						.put("type", "changeState")
-						.put("value", currentState.name)
-					.toString());
+					.put("type", "changeState")
+					.put("value", currentState.name())
+				.toString());
 				
 				break;
 				
 			case "vote":
 				//Get the value representing the card the user intended to vote for, and increment its vote count
 				int vote = map.getInt("value");
-				if(vote==1) {
+				if (vote == 1) {
 					votes1++;
-				}else {
+				} else {
 					votes2++;
 				}
 				//Send the updated vote counts to all clients
 				sendToAll(new JSONObject()
-						.put("type", "vote")
-						.put("card", 1)
-						.put("count", votes1)
-					.toString());
+					.put("type", "vote")
+					.put("votes1", votes1)
+					.put("votes2", votes2)
+				.toString());
 				
-				sendToAll(new JSONObject()
-						.put("type", "vote")
-						.put("card", 2)
-						.put("count", votes2)
-					.toString());
 				break;
 				
 			default:
@@ -442,11 +433,11 @@ public class Game {
 		String winner = decideRoundWinner();
 	}
 	
-	public void getNextState() {
+	public void changeToNextState() {
 		//Switch from the current game state to the next. The game follows a set order of states, so we can just
 		//proceed with a given order
 		//Done when a change state message is sent
-		switch(currentState) {
+		switch (currentState) {
 			case BEFORE_GAME:
 				currentState = State.DRAWING;
 				break;
@@ -457,6 +448,8 @@ public class Game {
 				currentState = State.END_GAME;
 				break;
 			case END_GAME:
+				//for now, TODO remove
+				currentState = State.BEFORE_GAME;
 				break;
 		}
 	}
