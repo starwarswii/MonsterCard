@@ -28,7 +28,7 @@ public class Player extends User {
 	
 	//Dispells card from a players hand
 	//TODO destroys instance of card
-	public Card disposeActiveCard() {
+	public void disposeActiveCard() {
 		
 	}
 	
