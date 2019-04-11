@@ -19,6 +19,7 @@ public class Game {
 		BEFORE_GAME,
 		DRAWING,
 		VOTING,
+		END_ROUND,
 		END_GAME
 	}
 	
@@ -45,6 +46,7 @@ public class Game {
 	
 	Map<WsSession, String> websocketToSessionId;
 	Map<String, User> sessionIdToUser;
+	Map<String, int> winCounts;
 	
 	String player1; //session id of active player 1
 	int votes1; // votes they have received
@@ -53,6 +55,7 @@ public class Game {
 	int votes2;
 	
 	int currentRound; //the current round
+	int totalRounds = 1;
 	List<String> wentThisRound; //list of player session ids that already went this round
 	
 	State currentState;
@@ -427,7 +430,7 @@ public class Game {
 		return votes1 > votes2 ? player1 : player2;
 	}
 	
-	//After round winner is decided, the consequences of the round are put into effect.
+	//ADecides round winner, and puts consequences of round into effect.
 	//TODO: code method to take the losing card and give it to the winner to edit
 	public void RoundConsequences() {
 		String winner = decideRoundWinner();
@@ -445,13 +448,52 @@ public class Game {
 				currentState = State.VOTING;
 				break;
 			case VOTING:
-				currentState = State.END_GAME;
+				currentState = State.END_ROUND;
+				break;
+				//TODO currently, game ends after 1 cycle. 
+				//When game is composed of more rounds, this will induce DRAWING state if there are more rounds to go.
+			case END_ROUND:
+				if (currentRound < totalRounds) {
+					currentState = State.END_GAME;
+				}
+				else {
+					currentState = State.DRAWING;
+				}
 				break;
 			case END_GAME:
 				//for now, TODO remove
 				currentState = State.BEFORE_GAME;
 				break;
 		}
+	}
+	
+	public void beforeToDrawing() {
+		//assign players? 
+	}
+	
+	public void drawingToVoting() {
+		//choose cards to battle
+	}
+	
+	public void votingToEndRound() {
+		//declare winner
+		//add winValue
+		RoundConsequences();
+		//clear vote count for next round
+		votes1 = 0;
+		votes2 = 0;
+	}
+	
+	public void endRoundtoDrawing() {
+		//assign users to cards for next round
+	}
+	
+	public void endRoundToEndGame() {
+		//assign winner
+	}
+	
+	public void endGameToStartGame() {
+		//clear variables for next game
 	}
 	
 	//TODO did not include:
