@@ -454,10 +454,10 @@ public class Game {
 				//When game is composed of more rounds, this will induce DRAWING state if there are more rounds to go.
 			case END_ROUND:
 				if (currentRound < totalRounds) {
-					currentState = State.END_GAME;
+					currentState = State.DRAWING;
 				}
 				else {
-					currentState = State.DRAWING;
+					currentState = State.END_GAME;
 				}
 				break;
 			case END_GAME:
