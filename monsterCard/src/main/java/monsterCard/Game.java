@@ -46,7 +46,7 @@ public class Game {
 	
 	Map<WsSession, String> websocketToSessionId;
 	Map<String, User> sessionIdToUser;
-	Map<String, int> winCounts;
+	Map<String, Integer> winCounts;
 	
 	String player1; //session id of active player 1
 	int votes1; // votes they have received
