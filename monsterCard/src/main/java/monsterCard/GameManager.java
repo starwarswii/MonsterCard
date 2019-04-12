@@ -2,7 +2,9 @@ package monsterCard;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class GameManager {
 	
@@ -35,9 +37,21 @@ public class GameManager {
 		return games.containsKey(id);
 	}
 	
-	public Integer[] getGameIds() {
-		Set<Integer> set = games.keySet();
-		return set.toArray(new Integer[set.size()]);
+	public JSONArray getGamesJson() {
+		JSONArray array = new JSONArray();
+		
+		for (Entry<Integer, Game> entry : games.entrySet()) {
+			int id = entry.getKey();
+			Game game = entry.getValue();
+			
+			JSONObject object = new JSONObject();
+			object.put("id", id);
+			object.put("name", game.gameName);
+			
+			array.put(object);
+		}
+		
+		return array;
 	}
 	
 	//TODO did not include:

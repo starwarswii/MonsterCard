@@ -3,12 +3,15 @@ $(function() {
 	
 	console.log("ready");
 	
+	var sessionId = util.getSessionId();
+	
 	var $games = $("#games");
 	var $create = $("#create");
 	var $refresh = $("#refresh");
 	
 	function loadGameList() {
-		$games.empty()
+		$games.empty();
+		
 		//TODO auto refresh on new server creation
 		//have server send refresh request via websocket
 		$.get("/games", function(data) {
@@ -20,9 +23,13 @@ $(function() {
 			}
 			
 			for (var i = 0; i < data.length; i++) {
-				//var x = $("<b>TEXT</b>");
-				//$games.append("<b>TEXT</b>");
-				$games.append("<a href=\"/game/"+data[i]+"\">Join Game "+data[i]+"</a><br>");
+				var game = data[i];
+				var id = game.id;
+				var name = game.name;
+				
+				//worth noting that clicking on these game links will not keep url parameters
+				//so for testing, with fake url-session ids, just visit games directly
+				$games.append("<a href=\"/game/"+id+"\">Join Game "+id+" ("+name+")</a><br>");
 			}
 			
 		});
@@ -33,13 +40,15 @@ $(function() {
 	$refresh.click(loadGameList);
 	
 	$create.click(function() {
-		$.get("/create", function(data) {
-			window.location.href = "/game/"+data;
+		
+		var gameName = null;
+		while (gameName === null) {
+			gameName = prompt("enter a game name", "MonsterCard");
+		}
+		
+		util.postJson("/create", {sessionId: sessionId, name: gameName}, function(response) {
+			var gameId = response.gameId;
+			util.redirect("/game/"+gameId);
 		});
 	});
-	
-	
-	
-
-
 });

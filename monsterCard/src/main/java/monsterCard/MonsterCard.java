@@ -4,7 +4,7 @@ import java.util.HashMap;
 import io.javalin.Javalin;
 import io.javalin.core.util.JettyServerUtil;
 import org.eclipse.jetty.server.session.SessionHandler;
-
+import org.json.JSONObject;
 
 public class MonsterCard {//TODO add some logging like in timer demo
 	
@@ -32,36 +32,24 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		
 		app.get("/games", ctx -> {
 			System.out.println("id "+ctx.req.getSession().getId());
-			
 			System.out.println("games requested");
-			ctx.json(manager.getGameIds());
-			//TODO i think you might be able to configure the json mapper
-			//this means its possible to define how an object is converted to json
-			//so for example you could make a GameManager convert to json of a list of ids
-			//probably not needed, but could be cool to look into
 			
+			ctx.contentType("application/json");
+			
+			ctx.result(manager.getGamesJson().toString());
 		});
-		
-		
-		//TODO add support for providing game name
-		app.get("/create", ctx -> {
-			System.out.println("create requested");
-			String ownerId = ctx.req.getSession().getId();
-			int gameId = manager.createGame(ownerId);
-			
-			//return id of newly created game
-			ctx.json(gameId);
-			
-		});
-		
 		
 		app.get("/game/:id", ctx -> {
 			int id = Integer.parseInt(ctx.pathParam("id")); //for now assume id is always a valid int
 			if (manager.gameExists(id)) {
 				//render template
 				
+				Game game = manager.getGame(id);
+				
 				HashMap<String, Object> model = new HashMap<>();
+				
 				model.put("id", id);
+				model.put("gameName", game.gameName);
 				
 				ctx.render("game.vtl", model);
 				
@@ -71,7 +59,24 @@ public class MonsterCard {//TODO add some logging like in timer demo
 			}
 		});
 		
-		app.get("/state/:id", ctx -> {
+		app.post("/create", ctx -> {
+			System.out.println("create requested");
+			
+			ctx.contentType("application/json");
+			
+			JSONObject json = new JSONObject(ctx.body());
+			
+			String ownerId = json.getString("sessionId");
+			String gameName = json.getString("name");
+			
+			int gameId = manager.createGame(ownerId, gameName);
+			
+			//return id of newly created game
+			ctx.result(new JSONObject().put("gameId", gameId).toString());
+			
+		});
+		
+		app.post("/state/:id", ctx -> {
 			//TODO all this stuff should probably live in Game
 			//and then moved to the websocket handling class
 			//that class might be better handling arbitrary messages
@@ -79,37 +84,25 @@ public class MonsterCard {//TODO add some logging like in timer demo
 			//and then this could be a single endpoint, but could post json
 			//like post to /api with data {type:status, game:1}
 			
+			//we could use ctx.json(), but that is calling JavalinJson.toJson()
+			//which is overkill, as we're just using org.json
+			//so equivalently, we can just set the content type, and use ctx.result(json.toString())
+			ctx.contentType("application/json");
+			
 			int id = Integer.parseInt(ctx.pathParam("id"));
 			if (manager.gameExists(id)) {
-				//build map and return
-				
-				String user = ctx.req.getSession().getId();
-				//String user = ctx.req.getSession()
 				
 				Game game = manager.getGame(id);
 				
-				HashMap<String, Object> map = new HashMap<>();
-				//map.put("id", id);
-				map.put("user", user);
-				map.put("isOwner", game.isOwner(user));
-				
-				//TODO possible race condition, timerRunning could change
-				//between this call and the next+
-				//unlikely though
-				map.put("isRunning", game.timerRunning);
-				if (game.timerRunning) {
-					map.put("value", game.timerValue);
-				}
-				
-				ctx.json(map);
-				
+				ctx.result(game.handleHttp(new JSONObject(ctx.body())).toString());
 			} else {
-				ctx.json("invalid");
+				ctx.result(new JSONObject().put("error", "invalid room id").toString());
 			}
 		});
 		
 		app.ws("/game/:id", ws -> {
 			
+			//TODO move this stuff into a websocket handler class
 			ws.onConnect(session -> {
 				int id = Integer.parseInt(session.pathParam("id"));
 				System.out.println("websocket connection made from "+session.host()+" with id "+session.getId());
@@ -132,7 +125,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				int id = Integer.parseInt(session.pathParam("id"));
 				System.out.println("got message from "+session.host()+" with id "+session.getId()+": "+response);
 				
-				manager.getGame(id).handleMessage(session, response);
+				manager.getGame(id).handleMessage(session, new JSONObject(response));
 			});
 		});
 		

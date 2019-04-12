@@ -15,7 +15,6 @@ import java.util.function.Function;
 import org.json.JSONObject;
 import io.javalin.websocket.WsSession;
 
-
 public class Game {
 	
 	enum State {
@@ -36,7 +35,7 @@ public class Game {
 	//person says thing, we do this.
 	
 	String ownerId; //session id of owner
-	String name; //name of this game
+	String gameName; //name of this game
 	
 	//TODO volatile needed? on one? on both?
 	volatile int timerValue;
@@ -64,9 +63,9 @@ public class Game {
 	
 	
 	
-	public Game(String ownerId, String name) {
+	public Game(String ownerId, String gameName) {
 		this.ownerId = ownerId;
-		this.name = name;
+		this.gameName = gameName;
 		
 		timerValue = TIMER_LENGTH;
 		timerRunning = false;
@@ -88,8 +87,8 @@ public class Game {
 		currentState = State.BEFORE_GAME;
 	}
 	
-	public boolean isOwner(String userId) {
-		return userId.equals(ownerId);
+	public boolean isOwner(String sessionId) {
+		return sessionId.equals(ownerId);
 	}
 	
 	//TODO remove timer at some point?
@@ -160,7 +159,6 @@ public class Game {
 		}
 	}
 	
-	
 	//helper function that lets you write stuff like
 	//sendToAll(x -> x.put("key", "value"));
 	//it is essentially just calling the constructor and toString for you
@@ -168,12 +166,6 @@ public class Game {
 	//it has small overhead
 	public void sendToAll(Function<JSONObject, JSONObject> x) {
 		sendToAll(x.apply(new JSONObject()).toString());
-	}
-	
-	//for whatever reason the JSESSIONID cookie is "xxxxxxxxx.yyyy"
-	//and the actual session id is "xxxxxxxxx"
-	private String parseSessionId(String raw) {
-		return raw.split("\\.")[0];
 	}
 	
 	private List<Player> getPlayers() {
@@ -248,19 +240,15 @@ public class Game {
  
 	}
 	
-	private User getUser(WsSession session) {
-		return sessionIdToUser.get(websocketToSessionId.get(session));
-	}
-	
-	public void handleConnect(WsSession session) {
+	public void handleConnect(WsSession websocket) {
 		//this is probably no-op
 	}
 	
-	public void handleClose(WsSession session) {
-		websocketToSessionId.remove(session);
+	public void handleClose(WsSession websocket) {
+		websocketToSessionId.remove(websocket);
 	}
 	
-	public void handleMessage(WsSession session, String response) {
+	public void handleMessage(WsSession websocket, JSONObject map) {
 		
 		//TODO have sockets tell you their session id on connection, use that to figure out who it is
 		//need a distinction between player/user and socket connection
@@ -268,16 +256,12 @@ public class Game {
 		//when socket closes, we still have user, but they're "away" or something
 		//add button to leave game, this removes player from game
 		
-		System.out.println(response);
-		
-		JSONObject map = new JSONObject(response);
+		System.out.println(map);
 		
 		String type = map.getString("type");
 		
-		if (type.equals("whoiam")) {
-			String sessionId = parseSessionId(map.getString("sessionId"));
-			
-			String username = map.getString("username");
+		if (type.equals("linkWebsocket")) {
+			String sessionId = map.getString("sessionId");
 			
 			//TODO let everyone else know a user joined?
 			//with chat message
@@ -292,12 +276,26 @@ public class Game {
 			//what should happen when owner leaves game?
 			//could close game, or assign another owner, or something
 			
-			//TODO if problems arise, try using websocket session id instead of whole WsSession object as key
-			websocketToSessionId.put(session, sessionId);
+			boolean newUser = !websocketToSessionId.containsValue(sessionId);
 			
-			if (!sessionIdToUser.containsKey(sessionId)) {
-				sessionIdToUser.put(sessionId, new Player(username, sessionId));
+			websocketToSessionId.put(websocket, sessionId);
+			
+			if (newUser) {
+				//by the time this is called, the user should already be set up from the http calls
+				//but just in case, we check first
+				String name = "an unidentified user";
+				
+				if (sessionIdToUser.containsKey(sessionId)) {
+					name = sessionIdToUser.get(sessionId).name;
+				}
+				
+				sendToAll(new JSONObject()
+					.put("type", "chat")
+					.put("sender", "Game")
+					.put("message", name+" joined the game")
+				.toString());
 			}
+			
 			//TODO handle different user types (player vs spectator)
 			//maybe dont set user type immediately and let them send a message indicating what
 			//they want to change to? would suggest combining Player and Spectator classes
@@ -305,25 +303,25 @@ public class Game {
 			return;
 		}
 		
-		
-		if (!websocketToSessionId.containsKey(session)) {
-			System.out.println("got message from unrecognized session "+session+", ignoring");
+		if (!websocketToSessionId.containsKey(websocket)) {
+			System.out.println("got message from unrecognized session "+websocket+", ignoring");
 			return;
 		}
+		
+		//at this point, this method ensures that this websocket is bound to a session id
+		String sessionId = websocketToSessionId.get(websocket);
+		
+		//the order of calls on the client side should ensure that at this point we also have a user object
+		//connected to the given session id. this is because the http api "createUser" request should be performed
+		//before opening the websocket, and reaching this point
+		User user = sessionIdToUser.get(sessionId);
 		
 		switch (type) {
 		
 			case "chat":
 				
 				String message = map.getString("message");
-				String sender = map.getString("sender");
-				//TODO could look up websocket id to get username, instead of trusting the given sender
-				
-				
-				//TODO handle senders
-				//could either send along sender
-				//or figure out sender
-				//or pass id along with message
+				String sender = user.name;
 				
 				//TODO add support for user list
 				//could be type:chat, event:join
@@ -343,8 +341,6 @@ public class Game {
 				
 				switch (command) {
 					case "start":
-						
-						String sessionId = websocketToSessionId.get(session);
 						
 						if (isOwner(sessionId)) {
 							System.out.println("starting!");
@@ -366,9 +362,7 @@ public class Game {
 			case "image":
 				String svgString = map.getString("img");
 				
-				Player user = (Player)getUser(session);
-				
-				user.updateCard(svgString);
+				((Player)user).updateCard(svgString);
 				
 				//TODO this will be removed. no response to this request
 				//just updates the card on the server side
@@ -380,6 +374,12 @@ public class Game {
 				break;
 				
 			case "changeState":
+				
+				if (!isOwner(sessionId)) {
+					System.out.println("someone who wasn't the owner attempted to change the state. ignoring");
+					return;
+				}
+				
 				//Update the internal game state
 				
 				//Switch from the current game state to the next. The game follows a set order of states, so we can just
@@ -418,7 +418,7 @@ public class Game {
 						
 					case VOTING:
 
-						//TODO wow, this is gross, need a nicer way to figure out how far
+						//TODO this is gross, need a nicer way to figure out how far
 						//into a given round we are
 						//boolean must be made before calling changeActivePlayers()
 						boolean endOfRound = wentThisRound.size() == getPlayerIds().size();
@@ -426,7 +426,7 @@ public class Game {
 						changeActivePlayers();
 						
 						if (endOfRound) {
-							//transision to drawing, or endgame if final round
+							//transition to drawing, or endgame if final round
 							
 							currentState = currentRound <= MAX_ROUNDS ? State.DRAWING : State.END_GAME;
 							
@@ -471,7 +471,7 @@ public class Game {
 							.toString());
 							
 						} else {
-							//transision to voting. in middle of round
+							//transition to voting. in middle of round
 							String winnerId;
 							String loserId;
 							if (votes1 > votes2) {
@@ -529,6 +529,7 @@ public class Game {
 				break;
 				
 			case "vote":
+				//TODO move vote if previously voted
 				//Get the value representing the card the user intended to vote for, and increment its vote count
 				int vote = map.getInt("value");
 				if (vote == 1) {
@@ -545,9 +546,74 @@ public class Game {
 				
 				break;
 				
+				
+			case "leaveGame":
+				if (!isOwner(sessionId)) {
+					sessionIdToUser.remove(sessionId);
+					
+					sendToAll(new JSONObject()
+						.put("type", "chat")
+						.put("sender", "Game")
+						.put("message", user.name+" left the game")
+					.toString());
+				} else {
+					//TODO how to handle owner leaving?
+					System.out.println("owner tried to leave game, ignoring");
+				}
+				break;
+				
 			default:
 				System.out.println("unrecognized message type "+type);
 			
+		}
+	}
+	
+	public JSONObject handleHttp(JSONObject map) {
+		
+		String type = map.getString("type");
+		String sessionId = map.getString("sessionId");
+		
+		JSONObject response = new JSONObject();
+		
+		switch (type) {
+		
+			case "amINew":
+				
+				boolean newUser = !sessionIdToUser.containsKey(sessionId);
+				
+				response.put("newUser", newUser);
+				
+				if (!newUser) {
+					response.put("username", sessionIdToUser.get(sessionId).name);
+				}
+				
+				return response;
+				
+			case "createUser":
+				
+				String username = map.getString("username");
+				
+				sessionIdToUser.put(sessionId, new Player(username, sessionId));
+				
+				return response;
+				
+			case "state":
+				
+				response.put("isOwner", isOwner(sessionId));
+				response.put("timerRunning", timerRunning);
+				
+				if (timerRunning) {
+					response.put("timerValue", timerValue);
+				}
+				
+				response.put("currentState", currentState.name());
+				
+				return response;
+				
+			default:
+				System.out.println("unrecognised http api type "+type+", ignoring");
+				response.put("error", "invalid type");
+				return response;
 		}
 	}
 	

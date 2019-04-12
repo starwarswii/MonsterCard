@@ -3,13 +3,9 @@ $(function() {
 	console.log("ready");
 	
 	var gameId = $("#gameId").text();
-
-	//the server session id within Jetty. we need this as the id
-	//of Javalin WebSocket sessions doesnt match this (it's a totally different id format)
-	//so we will send this id with each message we send to the server
-	//so the server knows who we are
-	//TODO check if this is undefined/null/whatever, and show an error, and refresh
-	var sessionId = Cookies.get("JSESSIONID");
+	
+	
+	var sessionId = util.getSessionId();
 
 	// drawing canvas controls
 	var $drawingClear = $("#clearcanvas");
@@ -28,7 +24,7 @@ $(function() {
 	var $chat = $("#chat");
 	var $messageBox = $("#messageBox");
 	var $send = $("#send");
-	var username = prompt("Please select a username", "someone");
+	
 
 	// change state
 	var $next = $("#next");
@@ -40,7 +36,7 @@ $(function() {
 	
 	var $currentState = $("#currentState");
 
-
+	var $leave = $("#leave");
 
 	
 	
@@ -64,6 +60,34 @@ $(function() {
 	//TODO maybe put these functions in an object or something to keep them more separate maybe
 	//or not, this could be fine
 
+	function switchToState(state) {
+		console.log("switching to state", state);
+		
+		$currentState.text(state);
+		
+		//TODO could be replaced by an object with functions, or something
+		switch (state) {
+			case "BEFORE_GAME":
+				initializeStartGame();
+				break;
+		
+			case "VOTING":
+				initializeVoting();
+				break;
+				
+			case "DRAWING":
+				initializeDrawing();
+				break;
+				
+			case "END_GAME":
+				initializeEnd();
+				break;
+				
+			default:
+				console.log("unknown state", state);
+		}
+	}
+	
 	function clearChat() {
 		//commented out for now as probably don't need to clear
 		//chat on state change
@@ -173,153 +197,162 @@ $(function() {
 		c1.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
 	}
 	// END OF CANVAS CODE ==============================================================================================
-
+	
+	var username = null;
+	
+	//TODO rename "state" url to something else
+	//might help avoid a bit of callback nesting
+	util.postJson("/state/"+gameId, {type: "amINew", sessionId: sessionId}, function(response) {
+		console.log("sent amINew, got back:", response);
+		
+		if (response.newUser) {
+			
+			//prompt returns null if they exit or click cancel
+			//so we loop till they give an answer
+			while (username === null) {
+				username = prompt("enter a username", "someone");
+			}
+			
+			//we don't really care about response from this one, but after it we want to set up the websocket
+			util.postJson("/state/"+gameId, {type: "createUser", sessionId: sessionId, username: username}, setUpWebsocket);
+			
+		} else {
+			username = response.username;
+			setUpWebsocket();
+		}
+	});
 	
 	//TODO could send id with parameters, instead of using path params
 	//might be better? i donno
-	$.get("/state/"+gameId, function(data) {
-		console.log("did GET to /state, got back:", data);
+	util.postJson("/state/"+gameId, {type: "state", sessionId: sessionId}, function(response) {
+		console.log("did POST to /state, got back:", response);
 		
-		var isOwner = data.isOwner;
-		var isRunning = data.isRunning;
+		var isOwner = response.isOwner;
+		var timerRunning = response.timerRunning;
+		var currentState = response.currentState;
 		
 		if (!isOwner) {
 			$start.hide();
 			$next.hide();
+		} else {
+			$leave.hide();
 		}
 		
-		if (isRunning) {
+		if (timerRunning) {
 			var timerValue = data.value;
 			$start.prop("disabled", true);
 			$timer.text(timerValue);
 		}
 
-		//TODO get current state
-		initializeStartGame();	
+		switchToState(currentState);
 	});
 	
-	var socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
+	//is initialized in setUpWebsocket(), which will be called in the "amINew" callback above
+	var socket;
 	
 	function sendMessage(obj) {
 		socket.send(JSON.stringify(obj));
 	}
-
-
-	//TODO: Need to check if user already has a username. Essentially make it so that
-	//we dont ask for a username after a page refresh.
-	socket.onopen = function(event) {
-		console.log("Websocket opened");
-		console.log(event);
-		
-		console.log("sending whoiam message");
-		sendMessage({
-			type: "whoiam",
-			username: username,
-			sessionId: sessionId
-		});
-	};
 	
-	socket.onclose = function(event) {
-		console.log("WebSocket closed");
-		console.log(event);
-	};
+	function setUpWebsocket() {
+		
+		socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
+
+		socket.onopen = function(event) {
+			console.log("Websocket opened");
+			console.log(event);
+			
+			console.log("sending link message");
+			sendMessage({
+				type: "linkWebsocket",
+				sessionId: sessionId
+			});
+		};
+		
+		socket.onclose = function(event) {
+			console.log("WebSocket closed");
+			console.log(event);
+		};
+		
+		socket.onmessage = function(response) {
+			console.log("message!");
+			
+			//TODO rename?
+			var map = JSON.parse(response.data);
+			
+			console.log("got message:", map);
+			console.log(response);
+			
+			var type = map.type;
+			
+			//TODO there's definitely a nicer way to do this
+			switch (type) {
+			
+				case "chat":
+					
+					var sender = map.sender;
+					var message = map.message;
+					
+					//quick hack to escape html, so we dont allow rendering whatever html the user types
+					//https://stackoverflow.com/a/6234808/3249197
+					//TODO is this good enough? better way?
+					var escapedMessage = $("<div />").text(message).html();
+					
+					//TODO make chat scroll and not just get longer and longer
+					//can probably be done through html
+					$chat.append(sender+": "+escapedMessage+"<br>");
+					
+					break;
+					
+				case "timer":
+					
+					var event = map.event;
+					
+					switch (event) {
+					
+						case "start":
+							$start.prop("disabled", true);
+							break;
+							
+						case "stop":
+							$start.prop("disabled", false);
+							$timer.text("not running");
+							break;
+						
+						case "value":
+							var value = map.value;
+							$timer.text(value);
+							break;
+						
+						default:
+							console.log("unknown event type ", event);
+					}
+					
+					break;
+
+				// TODO: add number to which canvas to paint
+				case "image":
+
+					var displayImage = map.img;
+					// var canvasNum = map.num;
+					loadImg(c2, displayImage);
+
+					break;
+
+				case "changeState":
+					var value = map.value;
+					
+					switchToState(value);
+					
+					break;
+
+				default:
+					console.log("unknown message type ", type);
+			}
+		};
+	}
 	
-	socket.onmessage = function(response) {
-		console.log("message!");
-		
-		//TODO rename?
-		var map = JSON.parse(response.data);
-		
-		console.log("got message:", map);
-		console.log(response);
-		
-		var type = map.type;
-		
-		//TODO there's definitely a nicer way to do this
-		switch (type) {
-		
-			case "chat":
-				
-				var sender = map.sender;
-				var message = map.message;
-				
-				//quick hack to escape html, so we dont allows rendering whatever html the user types
-				//https://stackoverflow.com/a/6234808/3249197
-				//TODO is this good enough? better way?
-				var escapedMessage = $("<div />").text(message).html();
-				
-				$chat.append(sender+": "+escapedMessage+"<br>");
-				
-				break;
-				
-			case "timer":
-				
-				var event = map.event;
-				
-				switch (event) {
-				
-					case "start":
-						$start.prop("disabled", true);
-						break;
-						
-					case "stop":
-						$start.prop("disabled", false);
-						$timer.text("not running");
-						break;
-					
-					case "value":
-						var value = map.value;
-						$timer.text(value);
-						break;
-					
-					default:
-						console.log("unknown event type ", event);
-				}
-				
-				break;
-
-			// TODO: add number to which canvas to paint
-			case "image":
-
-				var displayImage = map.img;
-				// var canvasNum = map.num;
-				loadImg(c2, displayImage);
-
-				break;
-
-			case "changeState":
-				var value = map.value;
-				console.log(value);
-				
-				$currentState.text(value);
-				
-				switch (value) {
-					case "BEFORE_GAME":
-						initializeStartGame();
-						break;
-				
-					case "VOTING":
-						initializeVoting();
-						break;
-						
-					case "DRAWING":
-						initializeDrawing();
-						break;
-						
-					case "END_GAME":
-						initializeEnd();
-						break;
-						
-					default:
-						console.log("unknown state", value);
-				}
-				
-				break;
-
-			default:
-				console.log("unknown message type ", type);
-		}
-	};
+	
 
 	$send.click(function() {
 		var message = $messageBox.val();
@@ -327,7 +360,6 @@ $(function() {
 		if (message !== "") {
 			sendMessage({
 				type: "chat",
-				sender: username,
 				message: message
 			});
 			
@@ -349,7 +381,6 @@ $(function() {
 		sendMessage({
 			type: "timer",
 			command: "start",
-			sessionId: sessionId
 		});
 	});
 
@@ -365,9 +396,12 @@ $(function() {
 	});
 
 	$next.click(function() {
-		sendMessage({
-			type: "changeState"
-		});
+		sendMessage({type: "changeState"});
+	});
+	
+	$leave.click(function() {
+		sendMessage({type: "leaveGame"});
+		util.redirect("/");
 	});
 
 });
