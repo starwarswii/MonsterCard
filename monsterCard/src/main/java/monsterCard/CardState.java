@@ -17,8 +17,16 @@ public class CardState {
 	public CardState(CardState state, String newSvgString, List<String> newDescriptors) {
 		svgString = newSvgString;
 		
-		//add the given state's descriptors plus the new descriptors
-		descriptors = new ArrayList<>(state.descriptors);
+		//will add the given state's descriptors plus the new descriptors
+		descriptors = null;
+		
+		//descriptors of the state may be null
+		//if it is, then the arraylist call with null causes NullPointerException
+		//so we need to test for it here
+		if (state.descriptors != null) {
+			
+			descriptors = new ArrayList<>(state.descriptors);
+		}
 		
 		if (newDescriptors != null) {
 			descriptors.addAll(newDescriptors);

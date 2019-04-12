@@ -17,6 +17,7 @@ $(function() {
 	var $drawingLineWidth = $("#drawing_linewidth");
 
 	// image sender
+	//TODO rename
 	var $save = $("#save");
 
 	// timer items

@@ -1,11 +1,14 @@
 package monsterCard;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Function;
@@ -19,7 +22,6 @@ public class Game {
 		BEFORE_GAME,
 		DRAWING,
 		VOTING,
-		END_ROUND,
 		END_GAME
 	}
 	
@@ -55,7 +57,7 @@ public class Game {
 	int votes2;
 	
 	int currentRound; //the current round
-	int totalRounds = 1;
+	static final int MAX_ROUNDS = 3;
 	List<String> wentThisRound; //list of player session ids that already went this round
 	
 	State currentState;
@@ -90,6 +92,7 @@ public class Game {
 		return userId.equals(ownerId);
 	}
 	
+	//TODO remove timer at some point?
 	public void startTimer() {
 		//notify everyone
 		//at the moment, this only serves to notify
@@ -145,13 +148,18 @@ public class Game {
 		timerValue = TIMER_LENGTH;
 	}
 	
-	public void sendToAll(String message) {
-		for (WsSession session : websocketToSessionId.keySet()) {
+	private void sendToAll(String message) {
+		sendTo(websocketToSessionId.keySet(), message);
+	}
+	
+	private void sendTo(Iterable<WsSession> websockets, String message) {
+		for (WsSession session : websockets) {
 			if (session.isOpen()) {
 				session.send(message);	
-			}
+			}//TODO remove session if not open anymore? seems like a nice spot to do so
 		}
 	}
+	
 	
 	//helper function that lets you write stuff like
 	//sendToAll(x -> x.put("key", "value"));
@@ -210,6 +218,40 @@ public class Game {
 		return spectators;
 	}
 	
+	private Map<Player, Set<WsSession>> getPlayersToWebsockets() {
+		HashMap<Player, Set<WsSession>> playerToWebsockets = new HashMap<>();
+		
+		for (Entry<WsSession, String> entry : websocketToSessionId.entrySet()) {
+			WsSession websocket = entry.getKey();
+			String sessionId = entry.getValue();
+			
+			//redundant check, as the sending method checks if it's open,
+			//but this keeps us from adding many websockets that are closed
+			//ideally closed websockets should be removed from websocketToSessionId
+			if (websocket.isOpen()) {
+				User user = sessionIdToUser.get(sessionId);
+				
+				if (user instanceof Player) {
+					Player player = (Player)user;
+					
+					if (!playerToWebsockets.containsKey(player)) {
+						playerToWebsockets.put(player, new HashSet<>());
+					}
+					
+					playerToWebsockets.get(player).add(websocket);
+				}
+			}
+			
+		}
+		
+		return playerToWebsockets;
+ 
+	}
+	
+	private User getUser(WsSession session) {
+		return sessionIdToUser.get(websocketToSessionId.get(session));
+	}
+	
 	public void handleConnect(WsSession session) {
 		//this is probably no-op
 	}
@@ -250,7 +292,7 @@ public class Game {
 			//what should happen when owner leaves game?
 			//could close game, or assign another owner, or something
 			
-			//TODO if problems arise, try using websocket session id instead as key
+			//TODO if problems arise, try using websocket session id instead of whole WsSession object as key
 			websocketToSessionId.put(session, sessionId);
 			
 			if (!sessionIdToUser.containsKey(sessionId)) {
@@ -322,29 +364,167 @@ public class Game {
 				break;
 
 			case "image":
-
-				String imageSVG = map.getString("img");
-
-				//TODO handle card creation adding to dealer deck
-
+				String svgString = map.getString("img");
+				
+				Player user = (Player)getUser(session);
+				
+				user.updateCard(svgString);
+				
+				//TODO this will be removed. no response to this request
+				//just updates the card on the server side
 				sendToAll(new JSONObject()
 					.put("type", "image")
-					.put("img", imageSVG)
+					.put("img", svgString)
 				.toString());
 
 				break;
 				
 			case "changeState":
 				//Update the internal game state
-				changeToNextState();
+				
+				//Switch from the current game state to the next. The game follows a set order of states, so we can just
+				//proceed with a given order
+				switch (currentState) {
+					case BEFORE_GAME:
+						
+						currentState = State.DRAWING;
+						
+						sendToAll(new JSONObject()
+							.put("type", "changeState")
+							.put("value", currentState.name())
+						.toString());
+						
+						break;
+					case DRAWING:
+						changeActivePlayers();
+						//maybe not needed, but here for now
+						votes1 = 0;
+						votes2 = 0;
+						
+						currentState = State.VOTING;
+						
+						//TODO this is a mess, must be nicer way, might require redesign
+						String card1 = ((Player)sessionIdToUser.get(player1)).getCardString();
+						String card2 = ((Player)sessionIdToUser.get(player2)).getCardString();
+						
+						sendToAll(new JSONObject()
+							.put("type", "changeState")
+							.put("value", currentState.name())
+							.put("card1", card1)
+							.put("card2", card2)
+						.toString());
+						
+						break;
+						
+					case VOTING:
+
+						//TODO wow, this is gross, need a nicer way to figure out how far
+						//into a given round we are
+						//boolean must be made before calling changeActivePlayers()
+						boolean endOfRound = wentThisRound.size() == getPlayerIds().size();
+						
+						changeActivePlayers();
+						
+						if (endOfRound) {
+							//transision to drawing, or endgame if final round
+							
+							currentState = currentRound <= MAX_ROUNDS ? State.DRAWING : State.END_GAME;
+							
+							
+							if (currentState == State.DRAWING) {
+								//shuffle cards and tell players their new cards
+								
+								List<String> cards = new ArrayList<>();
+								
+								Map<Player, Set<WsSession>> playerToWebsockets = getPlayersToWebsockets();
+								
+								for (Player player : playerToWebsockets.keySet()) {
+									cards.add(player.getCardString());
+								}
+								
+								Collections.shuffle(cards);
+								
+								List<Entry<Player, Set<WsSession>>> entryList = new ArrayList<>(playerToWebsockets.entrySet());
+								
+								for (int i = 0; i < entryList.size(); i++) {
+									
+									Entry<Player, Set<WsSession>> entry = entryList.get(i);
+									
+									Player player = entry.getKey();
+									Set<WsSession> websockets = entry.getValue();
+									
+									String newCard = cards.get(i);
+									
+									player.updateCard(newCard);
+									
+									sendTo(websockets, new JSONObject()
+										.put("type", "card")
+										.put("value", newCard)
+									.toString());
+									
+								}
+							}
+							
+							sendToAll(new JSONObject()
+								.put("type", "changeState")
+								.put("value", currentState.name())
+							.toString());
+							
+						} else {
+							//transision to voting. in middle of round
+							String winnerId;
+							String loserId;
+							if (votes1 > votes2) {
+								winnerId = player1;
+								loserId = player2;
+							} else {
+								winnerId = player2;
+								loserId = player1;
+							}
+							
+							votes1 = 0;
+							votes2 = 0;
+							
+							Player winner = (Player)sessionIdToUser.get(winnerId);
+							Player loser = (Player)sessionIdToUser.get(loserId);
+							
+							winner.score++;
+							
+							//TODO duplicate variable. maybe we /should/ compartmentalize this huge function
+							//but how? probably can just pass in session id and response to handle it
+							//or maybe don't even need response?
+							message = winner.name+" beats "+loser.name;
+							
+							sendToAll(new JSONObject()
+								.put("type", "chat")
+								.put("sender", "Game")
+								.put("message", message)
+							.toString());
+							
+							currentState = State.END_GAME;
+							
+							sendToAll(new JSONObject()
+								.put("type", "changeState")
+								.put("value", currentState.name())
+							.toString());
+						}
+
+						break;
+					case END_GAME:
+						
+						//for now, TODO remove
+						currentState = State.BEFORE_GAME;
+						currentRound = 0;
+						
+						sendToAll(new JSONObject()
+							.put("type", "changeState")
+							.put("value", currentState.name())
+						.toString());
+						break;
+				}
 				
 				System.out.println(currentState.name());
-				
-				//Send the new game state to all clients
-				sendToAll(new JSONObject()
-					.put("type", "changeState")
-					.put("value", currentState.name())
-				.toString());
+
 				
 				break;
 				
@@ -380,15 +560,16 @@ public class Game {
 	//TODO there's probably a better way to do this
 	//could maybe figure out all matchings at once and keep a list?
 	public void changeActivePlayers() {
-		int maxRounds = 3;
 		
 		List<String> players = getPlayerIds();
 
 		if (wentThisRound.size() == players.size()) {
-			if (currentRound == maxRounds) {
+			if (currentRound > MAX_ROUNDS) {
 				//TODO end game
 				//might be good for games to have a pointer to the GameManager that holds it
 				//so they can tell it to remove themselves
+				//TODO temporary, to keep game going (i think)
+				wentThisRound.clear();
 			} else {
 				currentRound++;
 				wentThisRound.clear();
@@ -426,45 +607,15 @@ public class Game {
 	}
 	
 	//decides who won the round based on vote counts
+	//probably unnecessary, can inline
 	public String decideRoundWinner() {
 		return votes1 > votes2 ? player1 : player2;
 	}
 	
-	//ADecides round winner, and puts consequences of round into effect.
+	//decides round winner, and puts consequences of round into effect.
 	//TODO: code method to take the losing card and give it to the winner to edit
 	public void RoundConsequences() {
 		String winner = decideRoundWinner();
-	}
-	
-	public void changeToNextState() {
-		//Switch from the current game state to the next. The game follows a set order of states, so we can just
-		//proceed with a given order
-		//Done when a change state message is sent
-		switch (currentState) {
-			case BEFORE_GAME:
-				currentState = State.DRAWING;
-				break;
-			case DRAWING:
-				currentState = State.VOTING;
-				break;
-			case VOTING:
-				currentState = State.END_ROUND;
-				break;
-				//TODO currently, game ends after 1 cycle. 
-				//When game is composed of more rounds, this will induce DRAWING state if there are more rounds to go.
-			case END_ROUND:
-				if (currentRound < totalRounds) {
-					currentState = State.DRAWING;
-				}
-				else {
-					currentState = State.END_GAME;
-				}
-				break;
-			case END_GAME:
-				//for now, TODO remove
-				currentState = State.BEFORE_GAME;
-				break;
-		}
 	}
 	
 	public void beforeToDrawing() {
