@@ -367,8 +367,8 @@ public class Game {
 				//TODO this will be removed. no response to this request
 				//just updates the card on the server side
 				sendToAll(new JSONObject()
-					.put("type", "image")
-					.put("img", svgString)
+					.put("type", "card")
+					.put("value", svgString)
 				.toString());
 
 				break;

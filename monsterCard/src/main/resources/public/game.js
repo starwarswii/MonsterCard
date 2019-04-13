@@ -24,7 +24,12 @@ $(function() {
 	var $chat = $("#chat");
 	var $messageBox = $("#messageBox");
 	var $send = $("#send");
-	
+
+	// vote items
+	var $vote1 = $("#vote1");
+	var $vote2 = $("#vote2");
+	var $score1 = $("#score1");
+	var $score2 = $("#score2");
 
 	// change state
 	var $next = $("#next");
@@ -32,6 +37,7 @@ $(function() {
 	// used to hide and show items
 	var $wrapper = $("#wrapper");
 	var $voteButtons = $("#voteButtons");
+	var $voteScore = $("#voteScore");
 	var $canvasControl = $("#canvasControls");
 	
 	var $currentState = $("#currentState");
@@ -99,6 +105,7 @@ $(function() {
 	    $wrapper.hide();
 	    $canvasControl.hide();
 	    $voteButtons.hide();
+	    $voteScore.hide();
 	}
 
 	function initializeDrawing() {
@@ -107,6 +114,7 @@ $(function() {
 	    $wrapper.show();
 	    $canvasControl.show();
 	    $voteButtons.hide();
+		$voteScore.hide();
 	}
 
 	function initializeVoting() {
@@ -115,6 +123,7 @@ $(function() {
 	    $wrapper.show();
 	    $canvasControl.hide();
 	    $voteButtons.show();
+		$voteScore.show();
 	}
 
 	function initializeEnd() {
@@ -122,6 +131,7 @@ $(function() {
 	    $wrapper.hide();
 	    $canvasControl.hide();
 	    $voteButtons.hide();
+		$voteScore.hide();
 	}
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
@@ -150,6 +160,10 @@ $(function() {
 			c1.renderAll();
 		});
 		drawing = true;
+	}
+
+	function clearCanvas(canvas) {
+		canvas.clear();
 	}
 
 	// helper function to load any img SVG to the given canvas
@@ -331,11 +345,11 @@ $(function() {
 					break;
 
 				// TODO: add number to which canvas to paint
-				case "image":
+				case "card":
 
-					var displayImage = map.img;
+					var newCard = map.value;
 					// var canvasNum = map.num;
-					loadImg(c2, displayImage);
+					loadImg(c2, newCard);
 
 					break;
 
@@ -343,7 +357,17 @@ $(function() {
 					var value = map.value;
 					
 					switchToState(value);
-					
+
+					var card1 = map.card1;
+					var card2 = map.card2;
+
+					if(card1 !== undefined) {
+						loadImg(c1, card1);
+					}
+					if(card2 !== undefined) {
+						loadImg(c2, card2);
+					}
+
 					break;
 
 				default:
