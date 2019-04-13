@@ -139,18 +139,36 @@ $(function() {
 	}
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
-	c1.on("object:added", function () {
+	c1.on("object:added", function() {
 		if (drawing) {
 			redo = []; // clears all redo states
 			undo.push(state); // adds the last state before drawing to the stack
 			state = JSON.stringify(c1); // updates the state for undomanager
+			
+			//"autosave" every time you add a stroke
+			//we check if we're drawing to prevent messages that get sent
+			//when loading the canvases
+			if ($currentState.text() == "DRAWING") {
+				sendMessage({
+					type: "card",
+					value: c1.toSVG()
+				});
+			}
+			
 		}
 	});
-	c1.on("object:modified", function () {
+	c1.on("object:modified", function() {
 		if (drawing) {
 			redo = [];
 			undo.push(state);
 			state = JSON.stringify(c1);
+		}
+		
+		if ($currentState.text() == "DRAWING") {
+			sendMessage({
+				type: "card",
+				value: c1.toSVG()
+			});
 		}
 	});
 
@@ -180,10 +198,18 @@ $(function() {
 			if (event.keyCode === 90) { // undo
 				if(undo.length > 0) { // won't undo if there is no undo state left
 					replay(undo, redo);
+					sendMessage({
+						type: "card",
+						value: c1.toSVG()
+					});
 				}
 			} else if (event.keyCode === 89) { // redo
 				if(redo.length > 0) { // won't redo if there is no redo state left
 					replay(redo, undo);
+					sendMessage({
+						type: "card",
+						value: c1.toSVG()
+					});
 				}
 			}
 		}
@@ -192,6 +218,10 @@ $(function() {
 	// clear canvas button
 	$drawingClear.click(function() {
 		c1.clear();
+		sendMessage({
+			type: "card",
+			value: c1.toSVG()
+		});
 	});
 
 	// edits the brush color
@@ -314,6 +344,9 @@ $(function() {
 					//TODO make chat scroll and not just get longer and longer
 					//can probably be done through html
 					$chat.append(sender+": "+escapedMessage+"<br>");
+					
+					//scrolls to the bottom of the chat
+					$chat.scrollTop($chat.prop("scrollHeight"));
 					
 					break;
 					

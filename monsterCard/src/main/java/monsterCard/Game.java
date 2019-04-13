@@ -248,9 +248,9 @@ public class Game {
 		//when socket closes, we still have user, but they're "away" or something
 		//add button to leave game, this removes player from game
 		
-		System.out.println(map);
-		
 		String type = map.getString("type");
+		
+		System.out.println("handling message of type "+type);
 		
 		if (type.equals("linkWebsocket")) {
 			String sessionId = map.getString("sessionId");
@@ -462,6 +462,8 @@ public class Game {
 		
 		String type = map.getString("type");
 		String sessionId = map.getString("sessionId");
+		
+		System.out.println("handling message of type "+type);
 		
 		JSONObject response = new JSONObject();
 		
