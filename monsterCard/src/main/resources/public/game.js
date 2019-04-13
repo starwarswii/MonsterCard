@@ -30,6 +30,7 @@ $(function() {
 	var $vote2 = $("#vote2");
 	var $score1 = $("#score1");
 	var $score2 = $("#score2");
+	var voted = 0;
 
 	// change state
 	var $next = $("#next");
@@ -101,7 +102,7 @@ $(function() {
 	}
 
 	function initializeStartGame() {
-	    clearChat($chat);
+	    clearChat();
 	    $wrapper.hide();
 	    $canvasControl.hide();
 	    $voteButtons.hide();
@@ -109,7 +110,7 @@ $(function() {
 	}
 
 	function initializeDrawing() {
-	    clearChat($chat);
+	    clearChat();
 	    c1.isDrawingMode = true;
 	    $wrapper.show();
 	    $canvasControl.show();
@@ -118,16 +119,19 @@ $(function() {
 	}
 
 	function initializeVoting() {
-	    clearChat($chat);
+	    clearChat();
+		voted = 0;
 	    c1.isDrawingMode = false;
 	    $wrapper.show();
 	    $canvasControl.hide();
 	    $voteButtons.show();
 		$voteScore.show();
+		$score1.text("Card 1: 0");
+		$score2.text("Card 2: 0");
 	}
 
 	function initializeEnd() {
-	    clearChat($chat);
+	    clearChat();
 	    $wrapper.hide();
 	    $canvasControl.hide();
 	    $voteButtons.hide();
@@ -370,6 +374,15 @@ $(function() {
 
 					break;
 
+				case "vote":
+					var votes1 = map.votes1;
+					var votes2 = map.votes2;
+
+					$score1.text("Card 1: " + votes1);
+					$score2.text("Card 2: " + votes2);
+
+					break;
+
 				default:
 					console.log("unknown message type ", type);
 			}
@@ -389,6 +402,20 @@ $(function() {
 			
 			$messageBox.val("");
 		}
+	});
+
+	$vote1.click(function() {
+		sendMessage({
+			type: "vote",
+			value: "1"
+		});
+	});
+
+	$vote2.click(function() {
+		sendMessage({
+			type: "vote",
+			value: "2"
+		});
 	});
 	
 	$messageBox.keypress(function(event) {

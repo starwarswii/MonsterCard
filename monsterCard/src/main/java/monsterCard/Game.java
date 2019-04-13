@@ -406,7 +406,7 @@ public class Game {
 						//TODO this is a mess, must be nicer way, might require redesign
 						String card1 = ((Player)sessionIdToUser.get(player1)).getCardString();
 						String card2 = ((Player)sessionIdToUser.get(player2)).getCardString();
-						
+
 						sendToAll(new JSONObject()
 							.put("type", "changeState")
 							.put("value", currentState.name())
