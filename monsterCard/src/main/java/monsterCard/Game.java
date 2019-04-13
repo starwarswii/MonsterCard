@@ -422,14 +422,11 @@ public class Game {
 				break;
 				
 			case "vote":
-				//TODO move vote if previously voted
-				//Get the value representing the card the user intended to vote for, and increment its vote count
+				
 				int vote = map.getInt("value");
-				if (vote == 1) {
-					votes1++;
-				} else {
-					votes2++;
-				}
+				
+				incrementVote(user, vote);
+				
 				//Send the updated vote counts to all clients
 				sendToAll(new JSONObject()
 					.put("type", "vote")
@@ -574,16 +571,20 @@ public class Game {
 	public void transitionToState(State state) {
 		JSONObject json = new JSONObject();
 		
-		currentState = state;
-		
 		json.put("type", "changeState");
-		json.put("currentState", currentState.name());
+		json.put("currentState", state.name());
 		
-		if (currentState == State.VOTING) {
+		//if we're transitioning to voting
+		if (state == State.VOTING) {
+			clearVotes();
+			
 			//TODO add support for displaying player's names alongside cards
 			json.put("card1", getPlayer1().getCardString());
 			json.put("card2", getPlayer2().getCardString());
 		}
+		
+		//perform transition
+		currentState = state;
 		
 		sendToAll(json);
 	}
@@ -598,9 +599,22 @@ public class Game {
 		if (votes1 > votes2) {
 			winner = getPlayer1();
 			loser = getPlayer2();
-		} else {
+			
+		} else if (votes1 < votes2) {
 			winner = getPlayer2();
 			loser = getPlayer1();
+			
+		} else {
+			
+			//do random tiebreaking
+			if (random.nextBoolean()) {
+				winner = getPlayer1();
+				loser = getPlayer2();
+				
+			} else {
+				winner = getPlayer2();
+				loser = getPlayer1();
+			}
 		}
 		
 		winner.score++;
@@ -665,6 +679,42 @@ public class Game {
 	public void resetScores() {
 		for (Player player : getPlayers()) {
 			player.score = 0;
+		}
+	}
+	
+	public void incrementVote(User user, int newVote) {
+		
+		int oldVote = user.currentVote;
+		
+		//if they didn't vote before, add vote normally
+		if (oldVote == -1) {
+			
+			if (newVote == 1) {
+				votes1++;
+			} else {
+				votes2++;
+			}
+			
+		//else if the're changing their vote, remove from old one
+		} else if (oldVote != newVote) {
+			if (newVote == 1) {
+				votes2--;
+				votes1++;
+			} else {
+				votes1--;
+				votes2++;
+			}
+		}
+		
+		//else the old and new vote were the same, so we do nothing
+		
+		//and in all cases, update the new old vote to the new vote
+		user.currentVote = newVote;
+	}
+	
+	public void clearVotes() {
+		for (User user : sessionIdToUser.values()) {
+			user.currentVote = -1;
 		}
 	}
 }
