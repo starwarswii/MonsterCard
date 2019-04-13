@@ -79,10 +79,7 @@ public class Game {
 		websocketToSessionId = new HashMap<>();
 		sessionIdToUser = new HashMap<>();
 		
-		//player1 = null;
 		votes1 = 0;
-		
-		//player2 = null;
 		votes2 = 0;
 		
 		currentRound = 0;
@@ -168,7 +165,7 @@ public class Game {
 	private void sendGameMessage(String message) {
 		sendToAll(new JSONObject()
 			.put("type", "chat")
-			.put("sender", "GAME")
+			.put("sender", ":")
 			.put("message", message)
 		);
 	}
@@ -391,10 +388,13 @@ public class Game {
 						} else if (currentRound < MAX_ROUNDS){
 							//end of round, but not end of game, shuffle and go to drawing
 							shuffleCards();
+							displayScores(false);
 							transitionToState(State.DRAWING);
 							
 						} else {
 							//end of round and end of game, go to endgame
+							displayScores(true);
+							resetScores();
 							transitionToState(State.END_GAME);
 						}
 						
@@ -642,6 +642,29 @@ public class Game {
 				.put("type", "card")
 				.put("value", newCard)
 			);
+		}
+	}
+	
+	public void displayScores(boolean showWinner) {
+		List<Player> players = getPlayers();
+		
+		//sort by score
+		//note we use reverse order of p1, p2 in the compare, so we sort high to low
+		Collections.sort(players, (p1, p2) -> Integer.compare(p2.score, p1.score));
+		
+		sendGameMessage("current scores:");
+		for (Player player : players) {
+			sendGameMessage(player.name+": "+player.score);
+		}
+		
+		if (showWinner) {
+			sendGameMessage(players.get(0).name+" wins!");
+		}
+	}
+	
+	public void resetScores() {
+		for (Player player : getPlayers()) {
+			player.score = 0;
 		}
 	}
 }
