@@ -49,10 +49,10 @@ public class Game {
 	Map<String, User> sessionIdToUser;
 	Map<String, Integer> winCounts;
 	
-	String player1; //session id of active player 1
+	//Player player1; //session id of active player 1
 	int votes1; // votes they have received
 	
-	String player2;
+	//Player player2;
 	int votes2;
 	
 	int currentRound; //the current round
@@ -61,7 +61,12 @@ public class Game {
 	
 	State currentState;
 	
+	//store matchups
+	//matchups[matchupIndex] and matchups[matchupIndex+1] are the current matchup
+	List<Player> matchups;
+	int matchupIndex;
 	
+	Random random;
 	
 	public Game(String ownerId, String gameName) {
 		this.ownerId = ownerId;
@@ -75,16 +80,18 @@ public class Game {
 		websocketToSessionId = new HashMap<>();
 		sessionIdToUser = new HashMap<>();
 		
-		player1 = null;
+		//player1 = null;
 		votes1 = 0;
 		
-		player2 = null;
+		//player2 = null;
 		votes2 = 0;
 		
 		currentRound = 0;
 		wentThisRound = new ArrayList<>();
 		
 		currentState = State.BEFORE_GAME;
+		
+		random = new Random();
 	}
 	
 	public boolean isOwner(String sessionId) {
@@ -100,7 +107,7 @@ public class Game {
 		sendToAll(new JSONObject()
 			.put("type", "timer")
 			.put("event", "start")
-		.toString());
+		);
 		
 		timerRunning = true;
 		
@@ -116,7 +123,7 @@ public class Game {
 					sendToAll(new JSONObject()
 						.put("type", "timer")
 						.put("event", "stop")
-					.toString());
+					);
 					
 					
 					stopTimer();
@@ -127,7 +134,7 @@ public class Game {
 						.put("type", "timer")
 						.put("event", "value")
 						.put("value", timerValue)
-					.toString());
+					);
 					
 					
 					timerValue--;
@@ -147,25 +154,24 @@ public class Game {
 		timerValue = TIMER_LENGTH;
 	}
 	
-	private void sendToAll(String message) {
-		sendTo(websocketToSessionId.keySet(), message);
+	private void sendToAll(JSONObject json) {
+		sendTo(websocketToSessionId.keySet(), json);
 	}
 	
-	private void sendTo(Iterable<WsSession> websockets, String message) {
+	private void sendTo(Iterable<WsSession> websockets, JSONObject json) {
 		for (WsSession session : websockets) {
 			if (session.isOpen()) {
-				session.send(message);	
+				session.send(json.toString());	
 			}//TODO remove session if not open anymore? seems like a nice spot to do so
 		}
 	}
 	
-	//helper function that lets you write stuff like
-	//sendToAll(x -> x.put("key", "value"));
-	//it is essentially just calling the constructor and toString for you
-	//TODO i'd say convert things to use this method, or remove it
-	//it has small overhead
-	public void sendToAll(Function<JSONObject, JSONObject> x) {
-		sendToAll(x.apply(new JSONObject()).toString());
+	private void sendGameMessage(String message) {
+		sendToAll(new JSONObject()
+			.put("type", "chat")
+			.put("sender", "GAME")
+			.put("message", message)
+		);
 	}
 	
 	private List<Player> getPlayers() {
@@ -289,11 +295,8 @@ public class Game {
 					name = sessionIdToUser.get(sessionId).name;
 				}
 				
-				sendToAll(new JSONObject()
-					.put("type", "chat")
-					.put("sender", "Game")
-					.put("message", name+" joined the game")
-				.toString());
+				sendGameMessage(name+" joined the game");
+				
 			}
 			
 			//TODO handle different user types (player vs spectator)
@@ -331,7 +334,7 @@ public class Game {
 					.put("type", "chat")
 					.put("sender", sender)
 					.put("message", message)
-				.toString());
+				);
 
 				break;
 				
@@ -359,17 +362,10 @@ public class Game {
 				
 				break;
 
-			case "image":
-				String svgString = map.getString("img");
+			case "card":
+				String svgString = map.getString("value");
 				
 				((Player)user).updateCard(svgString);
-				
-				//TODO this will be removed. no response to this request
-				//just updates the card on the server side
-				sendToAll(new JSONObject()
-					.put("type", "card")
-					.put("value", svgString)
-				.toString());
 
 				break;
 				
@@ -387,139 +383,50 @@ public class Game {
 				switch (currentState) {
 					case BEFORE_GAME:
 						
-						currentState = State.DRAWING;
-						
-						sendToAll(new JSONObject()
-							.put("type", "changeState")
-							.put("value", currentState.name())
-						.toString());
-						
+						transitionToState(State.DRAWING);
 						break;
+						
 					case DRAWING:
-						changeActivePlayers();
-						//maybe not needed, but here for now
-						votes1 = 0;
-						votes2 = 0;
 						
-						currentState = State.VOTING;
+						createMatchups(); //also increments round
+						loadMatchup();
 						
-						//TODO this is a mess, must be nicer way, might require redesign
-						String card1 = ((Player)sessionIdToUser.get(player1)).getCardString();
-						String card2 = ((Player)sessionIdToUser.get(player2)).getCardString();
-
-						sendToAll(new JSONObject()
-							.put("type", "changeState")
-							.put("value", currentState.name())
-							.put("card1", card1)
-							.put("card2", card2)
-						.toString());
-						
+						transitionToState(State.VOTING);
 						break;
 						
 					case VOTING:
 
-						//TODO this is gross, need a nicer way to figure out how far
-						//into a given round we are
-						//boolean must be made before calling changeActivePlayers()
-						boolean endOfRound = wentThisRound.size() == getPlayerIds().size();
+						determineWinner();
 						
-						changeActivePlayers();
-						
-						if (endOfRound) {
-							//transition to drawing, or endgame if final round
+						if (loadMatchup()) {
+							//in middle of round, go to voting
+							transitionToState(State.VOTING);
 							
-							currentState = currentRound <= MAX_ROUNDS ? State.DRAWING : State.END_GAME;
-							
-							
-							if (currentState == State.DRAWING) {
-								//shuffle cards and tell players their new cards
-								
-								List<String> cards = new ArrayList<>();
-								
-								Map<Player, Set<WsSession>> playerToWebsockets = getPlayersToWebsockets();
-								
-								for (Player player : playerToWebsockets.keySet()) {
-									cards.add(player.getCardString());
-								}
-								
-								Collections.shuffle(cards);
-								
-								List<Entry<Player, Set<WsSession>>> entryList = new ArrayList<>(playerToWebsockets.entrySet());
-								
-								for (int i = 0; i < entryList.size(); i++) {
-									
-									Entry<Player, Set<WsSession>> entry = entryList.get(i);
-									
-									Player player = entry.getKey();
-									Set<WsSession> websockets = entry.getValue();
-									
-									String newCard = cards.get(i);
-									
-									player.updateCard(newCard);
-									
-									sendTo(websockets, new JSONObject()
-										.put("type", "card")
-										.put("value", newCard)
-									.toString());
-									
-								}
-							}
-							
-							sendToAll(new JSONObject()
-								.put("type", "changeState")
-								.put("value", currentState.name())
-							.toString());
+						} else if (currentRound < MAX_ROUNDS){
+							//end of round, but not end of game, shuffle and go to drawing
+							shuffleCards();
+							transitionToState(State.DRAWING);
 							
 						} else {
-							//transition to voting. in middle of round
-							String winnerId;
-							String loserId;
-							if (votes1 > votes2) {
-								winnerId = player1;
-								loserId = player2;
-							} else {
-								winnerId = player2;
-								loserId = player1;
-							}
-							
-							votes1 = 0;
-							votes2 = 0;
-							
-							Player winner = (Player)sessionIdToUser.get(winnerId);
-							Player loser = (Player)sessionIdToUser.get(loserId);
-							
-							winner.score++;
-							
-							//TODO duplicate variable. maybe we /should/ compartmentalize this huge function
-							//but how? probably can just pass in session id and response to handle it
-							//or maybe don't even need response?
-							message = winner.name+" beats "+loser.name;
-							
-							sendToAll(new JSONObject()
-								.put("type", "chat")
-								.put("sender", "Game")
-								.put("message", message)
-							.toString());
-							
-							currentState = State.END_GAME;
-							
-							sendToAll(new JSONObject()
-								.put("type", "changeState")
-								.put("value", currentState.name())
-							.toString());
+							//end of round and end of game, go to endgame
+							transitionToState(State.END_GAME);
 						}
-
+						
 						break;
+						
 					case END_GAME:
 						
-						//for now, TODO remove
-						currentState = State.BEFORE_GAME;
+						//for now, we transition back to starting state, and reset
+						//TODO remove probably
+						
 						currentRound = 0;
 						
 						sendToAll(new JSONObject()
-							.put("type", "changeState")
-							.put("value", currentState.name())
-						.toString());
+							.put("type", "card")
+							.put("clear", true)
+						);
+						
+						transitionToState(State.BEFORE_GAME);
 						break;
 				}
 				
@@ -542,7 +449,7 @@ public class Game {
 					.put("type", "vote")
 					.put("votes1", votes1)
 					.put("votes2", votes2)
-				.toString());
+				);
 				
 				break;
 				
@@ -551,11 +458,8 @@ public class Game {
 				if (!isOwner(sessionId)) {
 					sessionIdToUser.remove(sessionId);
 					
-					sendToAll(new JSONObject()
-						.put("type", "chat")
-						.put("sender", "Game")
-						.put("message", user.name+" left the game")
-					.toString());
+					sendGameMessage(user.name+" left the game");
+					
 				} else {
 					//TODO how to handle owner leaving?
 					System.out.println("owner tried to leave game, ignoring");
@@ -608,6 +512,12 @@ public class Game {
 				
 				response.put("currentState", currentState.name());
 				
+				if (currentState == State.VOTING) {
+					//TODO add support for displaying player's names alongside cards
+					response.put("card1", getPlayer1().getCardString());
+					response.put("card2", getPlayer2().getCardString());
+				}
+				
 				return response;
 				
 			default:
@@ -617,100 +527,134 @@ public class Game {
 		}
 	}
 	
-	
-	//Randomly chooses two new Players to play the next round
-	//Sets player1 and player2 to be equal to those players' IDs
-	//Each player plays once per round, assuming an even number of players. Currently caps at 3 rounds
-	//One player will play twice in a round (specifically, in the last two face offs) if there are
-	//an odd number of players
-	//TODO there's probably a better way to do this
-	//could maybe figure out all matchings at once and keep a list?
-	public void changeActivePlayers() {
+	//constructs the matchups list
+	//matchups will be an even list of players such that adjacent pairs
+	//are matched to each other
+	//e.g. (0,1), (2,3) etc
+	//matchups may contain duplicate players, but it will
+	//be shallow copies. we aren't duplicating player instances
+	//calling this function also increments currentRound
+	public void createMatchups() {
 		
-		List<String> players = getPlayerIds();
+		//TODO might be clearer if this was just inlined in drawing
+		currentRound++;
 
-		if (wentThisRound.size() == players.size()) {
-			if (currentRound > MAX_ROUNDS) {
-				//TODO end game
-				//might be good for games to have a pointer to the GameManager that holds it
-				//so they can tell it to remove themselves
-				//TODO temporary, to keep game going (i think)
-				wentThisRound.clear();
-			} else {
-				currentRound++;
-				wentThisRound.clear();
-			}
+		matchups = getPlayers();
+		matchupIndex = -2; //we start two above, as loadMatchup increments first
+		
+		//special case for one player
+		//just match them with themselves
+		if (matchups.size() == 1) {
+			matchups.add(matchups.get(0));
+			return;
 		}
 		
-		Random random = new Random();
+		//we pass in random just so it doesn't create another
+		//source of randomness. really unnecessary, but since
+		//we need a Random for nextInt() below, might as well
+		Collections.shuffle(matchups, random);
 		
-		while (true) {
+		//if odd number of players
+		if (matchups.size() % 2 != 0) {
 			
-			int i = random.nextInt(players.size());
-			
-			if (!wentThisRound.contains(players.get(i))) {
-				wentThisRound.add(players.get(i));
-				player1 = players.get(i);
-				break;
-			}
-		}
-		
-		while (true) {
-			
-			if (wentThisRound.size() == players.size()) {
-				break;
-			}
-			
-			int i = random.nextInt(players.size());
-			
-			if (!wentThisRound.contains(players.get(i))) {
-				
-				wentThisRound.add(players.get(i));
-				player2 = players.get(i);
-				break;
-			}
+			//pick a random player from 0 to second to last
+			//and append them, matching with the last player
+			//we don't pick last so we don't match the last player
+			//with themselves
+			matchups.add(matchups.get(random.nextInt(matchups.size()-1)));
 		}
 	}
 	
-	//decides who won the round based on vote counts
-	//probably unnecessary, can inline
-	public String decideRoundWinner() {
-		return votes1 > votes2 ? player1 : player2;
-	}
-	
-	//decides round winner, and puts consequences of round into effect.
-	//TODO: code method to take the losing card and give it to the winner to edit
-	public void RoundConsequences() {
-		String winner = decideRoundWinner();
-	}
-	
-	public void beforeToDrawing() {
-		//assign players? 
-	}
-	
-	public void drawingToVoting() {
-		//choose cards to battle
-	}
-	
-	public void votingToEndRound() {
-		//declare winner
-		//add winValue
-		RoundConsequences();
-		//clear vote count for next round
+	//returns false if at end of voting
+	public boolean loadMatchup() {
+		matchupIndex += 2;
+		
 		votes1 = 0;
 		votes2 = 0;
+		
+		return matchupIndex < matchups.size();
 	}
 	
-	public void endRoundtoDrawing() {
-		//assign users to cards for next round
+	public Player getPlayer1() {
+		return matchups.get(matchupIndex);
 	}
 	
-	public void endRoundToEndGame() {
-		//assign winner
+	public Player getPlayer2() {
+		return matchups.get(matchupIndex+1);
 	}
 	
-	public void endGameToStartGame() {
-		//clear variables for next game
+	public void transitionToState(State state) {
+		JSONObject json = new JSONObject();
+		
+		currentState = state;
+		
+		json.put("type", "changeState");
+		json.put("currentState", currentState.name());
+		
+		if (currentState == State.VOTING) {
+			//TODO add support for displaying player's names alongside cards
+			json.put("card1", getPlayer1().getCardString());
+			json.put("card2", getPlayer2().getCardString());
+		}
+		
+		sendToAll(json);
+	}
+	
+	//picks winner with highest score,
+	//gives them a point, and sends a message
+	//announcing the winner
+	public void determineWinner() {
+		Player winner;
+		Player loser;
+		
+		if (votes1 > votes2) {
+			winner = getPlayer1();
+			loser = getPlayer2();
+		} else {
+			winner = getPlayer2();
+			loser = getPlayer1();
+		}
+		
+		winner.score++;
+		
+		sendGameMessage(winner.name+" beats "+loser.name);
+	}
+	
+	//shuffles cards among players and tells them their new cards
+	public void shuffleCards() {
+		
+		//create a reverse map. has all websockets belonging to each player
+		//we do this in order to contact all open websockets (if there happen to be more than one)
+		//to let them know of the card change
+		Map<Player, Set<WsSession>> playerToWebsockets = getPlayersToWebsockets();
+		
+		//create list of all card strings
+		List<String> cards = new ArrayList<>();
+		
+		for (Player player : playerToWebsockets.keySet()) {
+			cards.add(player.getCardString());
+		}
+		
+		Collections.shuffle(cards, random);
+		
+		//convert that reverse map into a list, so we can associate card i in the shuffled list with player i
+		List<Entry<Player, Set<WsSession>>> entryList = new ArrayList<>(playerToWebsockets.entrySet());
+		
+		for (int i = 0; i < entryList.size(); i++) {
+			
+			Entry<Player, Set<WsSession>> entry = entryList.get(i);
+			Player player = entry.getKey();
+			Set<WsSession> websockets = entry.getValue();
+			
+			String newCard = cards.get(i);
+			
+			player.updateCard(newCard);
+			
+			sendTo(websockets, new JSONObject()
+				.put("type", "card")
+				.put("value", newCard)
+			);
+		}
 	}
 	
 	//TODO did not include:

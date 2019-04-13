@@ -67,7 +67,10 @@ $(function() {
 	//TODO maybe put these functions in an object or something to keep them more separate maybe
 	//or not, this could be fine
 
-	function switchToState(state) {
+	function switchToState(map) {
+		
+		var state = map.currentState;
+		
 		console.log("switching to state", state);
 		
 		$currentState.text(state);
@@ -80,6 +83,10 @@ $(function() {
 		
 			case "VOTING":
 				initializeVoting();
+				
+				loadImg(c1, map.card1);
+				loadImg(c2, map.card2);
+				
 				break;
 				
 			case "DRAWING":
@@ -94,32 +101,25 @@ $(function() {
 				console.log("unknown state", state);
 		}
 	}
-	
-	function clearChat() {
-		//commented out for now as probably don't need to clear
-		//chat on state change
-	    //$chat.empty();
-	}
 
 	function initializeStartGame() {
-	    clearChat();
 	    $wrapper.hide();
 	    $canvasControl.hide();
 	    $voteButtons.hide();
 	    $voteScore.hide();
+	    $("#hider").hide();
 	}
 
 	function initializeDrawing() {
-	    clearChat();
 	    c1.isDrawingMode = true;
 	    $wrapper.show();
 	    $canvasControl.show();
 	    $voteButtons.hide();
 		$voteScore.hide();
+		$("#hider").hide();
 	}
 
 	function initializeVoting() {
-	    clearChat();
 		voted = 0;
 	    c1.isDrawingMode = false;
 	    $wrapper.show();
@@ -128,10 +128,10 @@ $(function() {
 		$voteScore.show();
 		$score1.text("Card 1: 0");
 		$score2.text("Card 2: 0");
+		$("#hider").show();
 	}
 
 	function initializeEnd() {
-	    clearChat();
 	    $wrapper.hide();
 	    $canvasControl.hide();
 	    $voteButtons.hide();
@@ -164,10 +164,6 @@ $(function() {
 			c1.renderAll();
 		});
 		drawing = true;
-	}
-
-	function clearCanvas(canvas) {
-		canvas.clear();
 	}
 
 	// helper function to load any img SVG to the given canvas
@@ -247,7 +243,6 @@ $(function() {
 		
 		var isOwner = response.isOwner;
 		var timerRunning = response.timerRunning;
-		var currentState = response.currentState;
 		
 		if (!isOwner) {
 			$start.hide();
@@ -262,7 +257,7 @@ $(function() {
 			$timer.text(timerValue);
 		}
 
-		switchToState(currentState);
+		switchToState(response);
 	});
 	
 	//is initialized in setUpWebsocket(), which will be called in the "amINew" callback above
@@ -348,29 +343,20 @@ $(function() {
 					
 					break;
 
-				// TODO: add number to which canvas to paint
 				case "card":
 
-					var newCard = map.value;
-					// var canvasNum = map.num;
-					loadImg(c2, newCard);
-
+					if (map.clear) {
+						c1.clear();
+						
+					} else {
+						loadImg(c1, map.value);
+					}
+					
 					break;
 
 				case "changeState":
-					var value = map.value;
 					
-					switchToState(value);
-
-					var card1 = map.card1;
-					var card2 = map.card2;
-
-					if(card1 !== undefined) {
-						loadImg(c1, card1);
-					}
-					if(card2 !== undefined) {
-						loadImg(c2, card2);
-					}
+					switchToState(map);
 
 					break;
 
@@ -441,8 +427,8 @@ $(function() {
 		// console.log(drawingCanvas.toSVG());
 		// when button is clicked, we send the image SVG to the server to be stored
 		sendMessage({
-			type: "image",
-			img: c1.toSVG()
+			type: "card",
+			value: c1.toSVG()
 		});
 	});
 
