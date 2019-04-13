@@ -3,7 +3,7 @@ $(function() {
 	
 	console.log("ready");
 	
-	var sessionId = util.getSessionId();
+	var sessionId = util.getSessionId;
 	
 	var $games = $("#games");
 	var $create = $("#create");
@@ -46,7 +46,7 @@ $(function() {
 			gameName = prompt("enter a game name", "MonsterCard");
 		}
 		
-		util.postJson("/create", {sessionId: sessionId, name: gameName}, function(response) {
+		util.postJson("/create", {sessionId: sessionId(), name: gameName}, function(response) {
 			var gameId = response.gameId;
 			util.redirect("/game/"+gameId);
 		});

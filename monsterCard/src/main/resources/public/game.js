@@ -5,7 +5,7 @@ $(function() {
 	var gameId = $("#gameId").text();
 	
 	
-	var sessionId = util.getSessionId();
+	var sessionId = util.getSessionId;
 
 	// drawing canvas controls
 	var $drawingClear = $("#clearcanvas");
@@ -202,7 +202,7 @@ $(function() {
 	
 	//TODO rename "state" url to something else
 	//might help avoid a bit of callback nesting
-	util.postJson("/state/"+gameId, {type: "amINew", sessionId: sessionId}, function(response) {
+	util.postJson("/state/"+gameId, {type: "amINew", sessionId: sessionId()}, function(response) {
 		console.log("sent amINew, got back:", response);
 		
 		if (response.newUser) {
@@ -214,7 +214,7 @@ $(function() {
 			}
 			
 			//we don't really care about response from this one, but after it we want to set up the websocket
-			util.postJson("/state/"+gameId, {type: "createUser", sessionId: sessionId, username: username}, setUpWebsocket);
+			util.postJson("/state/"+gameId, {type: "createUser", sessionId: sessionId(), username: username}, setUpWebsocket);
 			
 		} else {
 			username = response.username;
@@ -224,7 +224,7 @@ $(function() {
 	
 	//TODO could send id with parameters, instead of using path params
 	//might be better? i donno
-	util.postJson("/state/"+gameId, {type: "state", sessionId: sessionId}, function(response) {
+	util.postJson("/state/"+gameId, {type: "state", sessionId: sessionId()}, function(response) {
 		console.log("did POST to /state, got back:", response);
 		
 		var isOwner = response.isOwner;
@@ -265,7 +265,7 @@ $(function() {
 			console.log("sending link message");
 			sendMessage({
 				type: "linkWebsocket",
-				sessionId: sessionId
+				sessionId: sessionId()
 			});
 		};
 		

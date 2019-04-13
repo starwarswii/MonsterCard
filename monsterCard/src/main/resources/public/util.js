@@ -14,8 +14,9 @@ util.getSessionId = function() {
 		sessionId = Cookies.get("JSESSIONID");
 		
 		if (sessionId === undefined) {
-			alert("cannot get session id. will return to home page");
-			window.location.href = "/";
+			//best we can do for now
+			//usually, it gets defined by the time we need it
+			return "undefined";
 		}
 		
 		//for whatever reason the JSESSIONID cookie is "xxxxxxxxx.yyyy"
