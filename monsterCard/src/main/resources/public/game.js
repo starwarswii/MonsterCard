@@ -140,14 +140,14 @@ $(function() {
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
 	c1.on("object:added", function () {
-		if(drawing) {
+		if (drawing) {
 			redo = []; // clears all redo states
 			undo.push(state); // adds the last state before drawing to the stack
 			state = JSON.stringify(c1); // updates the state for undomanager
 		}
 	});
 	c1.on("object:modified", function () {
-		if(drawing) {
+		if (drawing) {
 			redo = [];
 			undo.push(state);
 			state = JSON.stringify(c1);

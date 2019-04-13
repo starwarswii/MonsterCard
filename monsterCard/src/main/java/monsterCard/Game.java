@@ -11,7 +11,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Function;
 import org.json.JSONObject;
 import io.javalin.websocket.WsSession;
 
@@ -188,19 +187,6 @@ public class Game {
 		}
 		
 		return players;
-	}
-	
-	private List<String> getPlayerIds() {
-		ArrayList<String> sessionIds = new ArrayList<>();
-		
-		for (Entry<String, User> entry : sessionIdToUser.entrySet()) {
-			
-			if (entry.getValue() instanceof Player) {
-				sessionIds.add(entry.getKey());
-			}
-		}
-		
-		return sessionIds;
 	}
 	
 	private List<Spectator> getSpectators() {
@@ -656,19 +642,4 @@ public class Game {
 			);
 		}
 	}
-	
-	//TODO did not include:
-	//addPlayer()
-	//addSpectator()
-	//removePlayer()
-	//removeSpecator()
-	//quit()
-	//main()
-	//at the moment it's not totally clear how players/spectators will be added to
-	//games, but it will probably be through websockets. if there are functions to add them,
-	//(which would end up being very simple anyway), they would be private
-	//we're also not sure how stopping/ending/quitting a game will work. the game
-	//might notify the manager, which will do it
-	//main() may come back, or it may be spread out across various functions/stuff in handleMessage()
-	//also we need to figure out how cards will work. will we have List<Card>? instance of Dealer?
 }

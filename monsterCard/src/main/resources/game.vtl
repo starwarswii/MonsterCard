@@ -12,83 +12,79 @@
 		<script src="/util.js"></script>
 		<script src="/game.js"></script>
 		
-		<style type="text/css">
-			#wrapper {
-				display: inline-block;
-			}
-			#results-c1, #results-c2 {
-				width: 390px;
-				min-height: 40px;
-				display: inline-block;
-				padding: 5px;
-				margin: 0 6px 15px 0;
-				float: left;
-			}
-		</style>
+		<link rel="stylesheet" href="/game.css">
 	</head>
-
 	<body>
 		<!-- TODO could possibly display:none everything till the "enter your name" box goes away -->
-	    <h3>You're in Game $id ($gameName)</h3>
-
+		<h3>You're in Game $id ($gameName)</h3>
+	
 		<div id="currentState">no state</div>
-
+	
 		<button id="leave">leave game</button>
-        <button id="next">Next</button>
-        <br>
-        <br>
-        <div id="chat"></div>
-        <input id="messageBox" placeholder="Type your message">
-        <button id="send">Send</button>
-
-        <div id="timer">not running</div>
-        <button id="start">start</button>
-
-        <br><br>
-        <div id="voteButtons" style="display: inline-block">
-            <button id="vote1">Vote 1</button>
-            <button id="vote2">Vote 2</button>
-        </div>
-
-        <div id="voteScore" style="display: inline-block">
-            <div id="score1">Card 1: 0</div>
-            <div id="score2">Card 2: 0</div>
-        </div>
-
+		<button id="next">Next</button>
 		<br>
-		<div id="wrapper">
-			<div id="results-c1">Drawing Canvas</div>​
-
-			<div id="canvasControls" style="display: inline-block; margin-left: 10px; margin-top: 10px">
-                <button id="clearcanvas">Clear</button>
-                <br>
-                <div id="drawing_modeoptions"></div>
-                <label for="drawing_linewidth">Line width:</label>
-                <span class="info">30</span><input type="range" value="30" min="0" max="150" id="drawing_linewidth">
-                <br>
-                <label for="drawing_color">Line color:</label>
-                <input type="color" value="#000000" id="drawing_color">
-                <br>
-                <button id="save">Send to Server</button>
-            </div>
-			<br>
-			<br>
-			<canvas id="c1" width="400" height="400" style="border:1px solid black"></canvas>
-            <br>
-            <div id="results-c2">Display Canvas</div>
-            <br>
-            <div id="hider">
-            <canvas id="c2" width="400" height="400" style="border:1px solid black"></canvas>
-            </div>
+		<br>
+		
+		<div id="chat"></div>
+		<input id="messageBox" placeholder="Type your message">
+		<button id="send">Send</button>
+	
+		<div id="timer">not running</div>
+		<button id="start">start</button>
+		<br>
+		<br>
+		
+		<div id="voteButtons">
+			<button id="vote1">Vote 1</button>
+			<button id="vote2">Vote 2</button>
 		</div>
-        <br>
-
+	
+		<div id="voteScore">
+			<div id="score1">Card 1: 0</div>
+			<div id="score2">Card 2: 0</div>
+		</div>
+		<br>
+		
+		<div id="wrapper">
+			<div id="results-c1">Drawing Canvas</div>
+			​
+			<div id="canvasControls">
+				<button id="clearcanvas">Clear</button>
+				<br>
+				
+				<div id="drawing_modeoptions"></div>
+				
+				<label for="drawing_linewidth">Line width:</label>
+				<span class="info">30</span>
+				<input type="range" value="30" min="0" max="150" id="drawing_linewidth">
+				<br>
+				
+				<label for="drawing_color">Line color:</label>
+				<input type="color" value="#000000" id="drawing_color">
+				<br>
+				
+				<button id="save">Send to Server</button>
+			</div>
+			<br>
+			<br>
+			
+			<canvas id="c1" width="400" height="400"></canvas>
+			<br>
+			
+			<div id="results-c2">Display Canvas</div>
+			<br>
+			
+			<div id="hider">
+				<canvas id="c2" width="400" height="400"></canvas>
+			</div>
+		</div>
+		<br>
+	
 		<!-- TODO incorporate? -->
 		<!-- <ul id="userList"></ul> -->
-		
+	
 		<!-- used to tell the javascript what game we're in -->
 		<!-- could probably also get the url to tell -->
-		<div id="gameId" style="display:none">$id</div>
-
+		<div id="gameId" style="display: none">$id</div>
 	</body>
 </html>
