@@ -111,7 +111,6 @@ $(function() {
 	}
 
 	function initializeDrawing() {
-	    c1.isDrawingMode = true;
 	    $wrapper.show();
 	    $canvasControl.show();
 		$("#results-draw").show();
@@ -123,7 +122,6 @@ $(function() {
 
 	function initializeVoting() {
 		voted = 0;
-	    c1.isDrawingMode = false;
 	    $wrapper.show();
 	    $canvasControl.hide();
 		$score1.text("Card 1: 0");
@@ -145,7 +143,7 @@ $(function() {
 		if (drawing) {
 			redo = []; // clears all redo states
 			undo.push(state); // adds the last state before drawing to the stack
-			state = JSON.stringify(c1); // updates the state for undomanager
+			state = JSON.stringify(drawC); // updates the state for undomanager
 			
 			//"autosave" every time you add a stroke
 			//we check if we're drawing to prevent messages that get sent
@@ -153,7 +151,7 @@ $(function() {
 			if ($currentState.text() == "DRAWING") {
 				sendMessage({
 					type: "card",
-					value: c1.toSVG()
+					value: drawC.toSVG()
 				});
 			}
 			
@@ -163,13 +161,13 @@ $(function() {
 		if (drawing) {
 			redo = [];
 			undo.push(state);
-			state = JSON.stringify(c1);
+			state = JSON.stringify(drawC);
 		}
 		
 		if ($currentState.text() == "DRAWING") {
 			sendMessage({
 				type: "card",
-				value: c1.toSVG()
+				value: drawC.toSVG()
 			});
 		}
 	});
@@ -222,7 +220,7 @@ $(function() {
 		drawC.clear();
 		sendMessage({
 			type: "card",
-			value: c1.toSVG()
+			value: drawC.toSVG()
 		});
 	});
 
@@ -381,10 +379,10 @@ $(function() {
 				case "card":
 
 					if (map.clear) {
-						c1.clear();
+						drawC.clear();
 						
 					} else {
-						loadImg(c1, map.value);
+						loadImg(drawC, map.value);
 					}
 					
 					break;
