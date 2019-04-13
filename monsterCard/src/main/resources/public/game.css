@@ -1,8 +1,9 @@
 #wrapper {
-	display: inline-block;
+	display: grid;
+	grid-template-columns: auto auto;
 }
 
-#results-c1, #results-c2 {
+#results-draw, #results-c1, #results-c2 {
 	width: 390px;
 	min-height: 40px;
 	display: inline-block;
@@ -31,4 +32,14 @@
 	height: 200px;
 	word-break: break-word;
 	border: 1px solid black;
+}
+
+#displayCanvas {
+	display: grid;
+	grid-template-columns: auto auto;
+}
+
+#grid {
+	display: grid;
+	grid-template-columns: auto auto auto auto;
 }

@@ -120,7 +120,8 @@ $(function() {
 	    $canvasControl.show();
 	    $voteButtons.hide();
 		$voteScore.hide();
-		$("#results-c1").show();
+		$("#results-draw").show();
+		$("#results-c1").hide();
 		$("#results-c2").hide();
 		$("#drawCanvas").show();
 		$("#displayCanvas").hide();
@@ -135,7 +136,8 @@ $(function() {
 		$voteScore.show();
 		$score1.text("Card 1: 0");
 		$score2.text("Card 2: 0");
-		$("#results-c1").hide();
+		$("#results-draw").hide();
+		$("#results-c1").show();
 		$("#results-c2").show();
 		$("#drawCanvas").hide();
 		$("#displayCanvas").show();
