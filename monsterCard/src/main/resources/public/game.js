@@ -65,6 +65,13 @@ $(function() {
 	var state; // the last state of the drawingCanvas
 	var drawing = true;
 	
+	function sendCard() {
+		sendMessage({
+			type: "card",
+			value: drawC.toSVG()
+		});
+	}
+	
 	// STATES ==========================================================
 	
 	//TODO maybe put these functions in an object or something to keep them more separate maybe
@@ -115,7 +122,6 @@ $(function() {
 	}
 
 	function initializeDrawing() {
-	    c1.isDrawingMode = true;
 	    $wrapper.show();
 	    $canvasControl.show();
 	    $voteButtons.hide();
@@ -129,7 +135,6 @@ $(function() {
 
 	function initializeVoting() {
 		voted = 0;
-	    c1.isDrawingMode = false;
 	    $wrapper.show();
 	    $canvasControl.hide();
 	    $voteButtons.show();
@@ -155,17 +160,10 @@ $(function() {
 		if (drawing) {
 			redo = []; // clears all redo states
 			undo.push(state); // adds the last state before drawing to the stack
-			state = JSON.stringify(c1); // updates the state for undomanager
+			state = JSON.stringify(drawC); // updates the state for undomanager
 			
 			//"autosave" every time you add a stroke
-			//we check if we're drawing to prevent messages that get sent
-			//when loading the canvases
-			if ($currentState.text() == "DRAWING") {
-				sendMessage({
-					type: "card",
-					value: c1.toSVG()
-				});
-			}
+			sendCard();
 			
 		}
 	});
@@ -173,14 +171,9 @@ $(function() {
 		if (drawing) {
 			redo = [];
 			undo.push(state);
-			state = JSON.stringify(c1);
-		}
-		
-		if ($currentState.text() == "DRAWING") {
-			sendMessage({
-				type: "card",
-				value: c1.toSVG()
-			});
+			state = JSON.stringify(drawC);
+			
+			sendCard();
 		}
 	});
 
@@ -206,22 +199,16 @@ $(function() {
 	}
 
 	document.addEventListener('keydown', function(event) {
-		if(event.ctrlKey) {
+		if (event.ctrlKey) {
 			if (event.keyCode === 90) { // undo
-				if(undo.length > 0) { // won't undo if there is no undo state left
+				if (undo.length > 0) { // won't undo if there is no undo state left
 					replay(undo, redo);
-					sendMessage({
-						type: "card",
-						value: drawC.toSVG()
-					});
+					sendCard();
 				}
 			} else if (event.keyCode === 89) { // redo
-				if(redo.length > 0) { // won't redo if there is no redo state left
+				if (redo.length > 0) { // won't redo if there is no redo state left
 					replay(redo, undo);
-					sendMessage({
-						type: "card",
-						value: drawC.toSVG()
-					});
+					sendCard();
 				}
 			}
 		}
@@ -230,10 +217,7 @@ $(function() {
 	// clear canvas button
 	$drawingClear.click(function() {
 		drawC.clear();
-		sendMessage({
-			type: "card",
-			value: c1.toSVG()
-		});
+		sendCard();
 	});
 
 	// edits the brush color
@@ -391,10 +375,10 @@ $(function() {
 				case "card":
 
 					if (map.clear) {
-						c1.clear();
+						drawC.clear();
 						
 					} else {
-						loadImg(c1, map.value);
+						loadImg(drawC, map.value);
 					}
 					
 					break;
@@ -471,10 +455,7 @@ $(function() {
 		console.log("image sent:")
 		// console.log(drawingCanvas.toSVG());
 		// when button is clicked, we send the image SVG to the server to be stored
-		sendMessage({
-			type: "card",
-			value: drawC.toSVG()
-		});
+		sendCard();
 	});
 
 	$next.click(function() {
