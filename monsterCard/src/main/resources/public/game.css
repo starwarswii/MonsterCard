@@ -43,3 +43,7 @@
 	display: grid;
 	grid-template-columns: auto auto auto auto;
 }
+
+#vote1, #vote2 {
+	width: 100px;
+}

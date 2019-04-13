@@ -37,8 +37,6 @@ $(function() {
 
 	// used to hide and show items
 	var $wrapper = $("#wrapper");
-	var $voteButtons = $("#voteButtons");
-	var $voteScore = $("#voteScore");
 	var $canvasControl = $("#canvasControls");
 	
 	var $currentState = $("#currentState");
@@ -108,8 +106,6 @@ $(function() {
 	function initializeStartGame() {
 	    $wrapper.hide();
 	    $canvasControl.hide();
-	    $voteButtons.hide();
-	    $voteScore.hide();
 		$("#drawCanvas").hide();
 		$("#displayCanvas").hide();
 	}
@@ -118,8 +114,6 @@ $(function() {
 	    c1.isDrawingMode = true;
 	    $wrapper.show();
 	    $canvasControl.show();
-	    $voteButtons.hide();
-		$voteScore.hide();
 		$("#results-draw").show();
 		$("#results-c1").hide();
 		$("#results-c2").hide();
@@ -132,8 +126,6 @@ $(function() {
 	    c1.isDrawingMode = false;
 	    $wrapper.show();
 	    $canvasControl.hide();
-	    $voteButtons.show();
-		$voteScore.show();
 		$score1.text("Card 1: 0");
 		$score2.text("Card 2: 0");
 		$("#results-draw").hide();
@@ -146,8 +138,6 @@ $(function() {
 	function initializeEnd() {
 	    $wrapper.hide();
 	    $canvasControl.hide();
-	    $voteButtons.hide();
-		$voteScore.hide();
 	}
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
