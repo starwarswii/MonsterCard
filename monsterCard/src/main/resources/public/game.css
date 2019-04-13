@@ -21,7 +21,7 @@
 	display: inline-block;
 }
 
-#c1, #c2 {
+#drawC, #c1, #c2 {
 	border: 1px solid black;
 }
 
