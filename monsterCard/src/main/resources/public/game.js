@@ -49,10 +49,13 @@ $(function() {
 	
 	// CANVAS CODE =====================================================================================================
 	// intilize drawing canvas, allows drawing
-	var c1 = new fabric.Canvas('c1', {
+	var drawC = new fabric.Canvas('drawC', {
 		isDrawingMode: true
 	});
 	// intilize display canvas, unable to edit only displays image of what was retrieved from server
+	var c1 = new fabric.StaticCanvas('c1', {
+		selectable: false
+	});
 	var c2 = new fabric.StaticCanvas('c2', {
 		selectable: false
 	});
@@ -107,7 +110,8 @@ $(function() {
 	    $canvasControl.hide();
 	    $voteButtons.hide();
 	    $voteScore.hide();
-	    $("#hider").hide();
+		$("#drawCanvas").hide();
+		$("#displayCanvas").hide();
 	}
 
 	function initializeDrawing() {
@@ -116,7 +120,11 @@ $(function() {
 	    $canvasControl.show();
 	    $voteButtons.hide();
 		$voteScore.hide();
-		$("#hider").hide();
+		$("#results-draw").show();
+		$("#results-c1").hide();
+		$("#results-c2").hide();
+		$("#drawCanvas").show();
+		$("#displayCanvas").hide();
 	}
 
 	function initializeVoting() {
@@ -128,7 +136,11 @@ $(function() {
 		$voteScore.show();
 		$score1.text("Card 1: 0");
 		$score2.text("Card 2: 0");
-		$("#hider").show();
+		$("#results-draw").hide();
+		$("#results-c1").show();
+		$("#results-c2").show();
+		$("#drawCanvas").hide();
+		$("#displayCanvas").show();
 	}
 
 	function initializeEnd() {
@@ -139,7 +151,7 @@ $(function() {
 	}
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack
-	c1.on("object:added", function() {
+	drawC.on("object:added", function() {
 		if (drawing) {
 			redo = []; // clears all redo states
 			undo.push(state); // adds the last state before drawing to the stack
@@ -157,7 +169,7 @@ $(function() {
 			
 		}
 	});
-	c1.on("object:modified", function() {
+	drawC.on("object:modified", function() {
 		if (drawing) {
 			redo = [];
 			undo.push(state);
@@ -176,10 +188,10 @@ $(function() {
 	function replay(playStack, saveStack) {
 		saveStack.push(state);
 		state = playStack.pop();
-		c1.clear();
+		drawC.clear();
 		drawing = false;
-		c1.loadFromJSON(state, function() {
-			c1.renderAll();
+		drawC.loadFromJSON(state, function() {
+			drawC.renderAll();
 		});
 		drawing = true;
 	}
@@ -200,7 +212,7 @@ $(function() {
 					replay(undo, redo);
 					sendMessage({
 						type: "card",
-						value: c1.toSVG()
+						value: drawC.toSVG()
 					});
 				}
 			} else if (event.keyCode === 89) { // redo
@@ -208,7 +220,7 @@ $(function() {
 					replay(redo, undo);
 					sendMessage({
 						type: "card",
-						value: c1.toSVG()
+						value: drawC.toSVG()
 					});
 				}
 			}
@@ -217,7 +229,7 @@ $(function() {
 
 	// clear canvas button
 	$drawingClear.click(function() {
-		c1.clear();
+		drawC.clear();
 		sendMessage({
 			type: "card",
 			value: c1.toSVG()
@@ -226,19 +238,19 @@ $(function() {
 
 	// edits the brush color
 	$drawingColor.on("change", function() {
-		c1.freeDrawingBrush.color = $drawingColor.val();
+		drawC.freeDrawingBrush.color = $drawingColor.val();
 	});
 
 	// edits the brush width
 	$drawingLineWidth.on("change", function() {
-		c1.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
+		drawC.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
 		this.previousSibling.innerHTML = $drawingLineWidth.val();
 	});
 
 	// updates the brush when free drawing is turned on
-	if (c1.freeDrawingBrush) {
-		c1.freeDrawingBrush.color = $drawingColor.val();
-		c1.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
+	if (drawC.freeDrawingBrush) {
+		drawC.freeDrawingBrush.color = $drawingColor.val();
+		drawC.freeDrawingBrush.width = parseInt($drawingLineWidth.val(), 10) || 1;
 	}
 	// END OF CANVAS CODE ==============================================================================================
 	
@@ -461,7 +473,7 @@ $(function() {
 		// when button is clicked, we send the image SVG to the server to be stored
 		sendMessage({
 			type: "card",
-			value: c1.toSVG()
+			value: drawC.toSVG()
 		});
 	});
 
