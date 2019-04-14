@@ -92,7 +92,10 @@ $(function() {
 			case "VOTING":
 				initializeVoting();
 
+				$("#results-c1").text("Card 1: by "+map.player1);
 				loadImg(c1, map.card1);
+				
+				$("#results-c2").text("Card 2: by "+map.player2);
 				loadImg(c2, map.card2);
 
 				break;
@@ -131,8 +134,8 @@ $(function() {
 		voted = 0;
 	    $wrapper.show();
 	    $canvasControl.hide();
-		$score1.text("Card 1: 0");
-		$score2.text("Card 2: 0");
+		$score1.text("Votes: 0");
+		$score2.text("Votes: 0");
 		$("#results-draw").hide();
 		$("#results-c1").show();
 		$("#results-c2").show();
@@ -382,8 +385,8 @@ $(function() {
 					var votes1 = map.votes1;
 					var votes2 = map.votes2;
 
-					$score1.text("Card 1: " + votes1);
-					$score2.text("Card 2: " + votes2);
+					$score1.text("Votes: "+votes1);
+					$score2.text("Votes: "+votes2);
 
 					break;
 

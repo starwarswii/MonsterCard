@@ -436,7 +436,6 @@ public class Game {
 				
 				break;
 				
-				
 			case "leaveGame":
 				if (!isOwner(sessionId)) {
 					sessionIdToUser.remove(sessionId);
@@ -445,6 +444,7 @@ public class Game {
 					
 				} else {
 					//TODO how to handle owner leaving?
+					//could like close the game and kick everyone or somthing
 					System.out.println("owner tried to leave game, ignoring");
 				}
 				break;
@@ -578,9 +578,14 @@ public class Game {
 		if (state == State.VOTING) {
 			clearVotes();
 			
-			//TODO add support for displaying player's names alongside cards
-			json.put("card1", getPlayer1().getCardString());
-			json.put("card2", getPlayer2().getCardString());
+			Player player1 = getPlayer1();
+			Player player2 = getPlayer2();
+			
+			json.put("player1", player1.name);
+			json.put("card1", player1.getCardString());
+			
+			json.put("player2", player2.name);
+			json.put("card2", player2.getCardString());
 		}
 		
 		//perform transition
