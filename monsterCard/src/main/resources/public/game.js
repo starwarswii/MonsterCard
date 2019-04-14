@@ -234,7 +234,6 @@ $(function() {
 	// END OF CANVAS CODE ==============================================================================================
 
 	//TODO rename "state" url to something else
-	//might help avoid a bit of callback nesting
 	util.postJson("/state/"+gameId, {type: "amINew", sessionId: sessionId()}, function(response) {
 		console.log("sent amINew, got back:", response);
 

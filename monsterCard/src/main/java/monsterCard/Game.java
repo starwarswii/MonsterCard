@@ -186,19 +186,6 @@ public class Game {
 		return players;
 	}
 	
-	private List<Spectator> getSpectators() {
-		ArrayList<Spectator> spectators = new ArrayList<>();
-		
-		for (User user : sessionIdToUser.values()) {
-			
-			if (user instanceof Spectator) {
-				spectators.add((Spectator)user);
-			}
-		}
-		
-		return spectators;
-	}
-	
 	private Map<Player, Set<WsSession>> getPlayersToWebsockets() {
 		HashMap<Player, Set<WsSession>> playerToWebsockets = new HashMap<>();
 		
@@ -416,10 +403,7 @@ public class Game {
 						transitionToState(State.BEFORE_GAME);
 						break;
 				}
-				
-				System.out.println(currentState.name());
 
-				
 				break;
 				
 			case "vote":
@@ -484,7 +468,6 @@ public class Game {
 				String username = map.getString("username");
 				boolean isSpectator = map.getBoolean("isSpectator");
 				
-				System.out.println("createUser: isSpectator is "+isSpectator+" for session id "+sessionId);
 				if (isSpectator) {
 					sessionIdToUser.put(sessionId, new Spectator(username, sessionId));
 				} else {
@@ -503,13 +486,12 @@ public class Game {
 				}
 				
 				isSpectator = sessionIdToUser.get(sessionId) instanceof Spectator;
-				System.out.println("state: isSpectator is "+isSpectator+" for session id "+sessionId);
+				
 				response.put("isSpectator", isSpectator);
 				
 				response.put("currentState", currentState.name());
 				
 				if (currentState == State.VOTING) {
-					//TODO add support for displaying player's names alongside cards
 					response.put("card1", getPlayer1().getCardString());
 					response.put("card2", getPlayer2().getCardString());
 				}
@@ -601,6 +583,7 @@ public class Game {
 		
 		//perform transition
 		currentState = state;
+		System.out.println("transitioned to state "+currentState.name());
 		
 		sendToAll(json);
 	}
