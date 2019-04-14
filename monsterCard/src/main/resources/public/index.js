@@ -8,6 +8,7 @@ $(function() {
 	var $games = $("#games");
 	var $create = $("#create");
 	var $refresh = $("#refresh");
+	var $gameIDForm = $("#gameIDForm");
 	
 	function loadGameList() {
 		$games.empty();
@@ -51,4 +52,14 @@ $(function() {
 			util.redirect("/game/"+gameId);
 		});
 	});
+
+	$(document).ready(function() {
+		$gameIDForm.on("submit", function (e) {
+			e.preventDefault();
+			var data = $("input[name=gameID]").val();
+			util.redirect("/game/"+data);
+		});
+	});
+
+
 });
