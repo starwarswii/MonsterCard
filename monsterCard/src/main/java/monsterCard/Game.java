@@ -273,18 +273,19 @@ public class Game {
 				//by the time this is called, the user should already be set up from the http calls
 				//but just in case, we check first
 				String name = "an unidentified user";
+				String spectatorString = "";
 				
 				if (sessionIdToUser.containsKey(sessionId)) {
-					name = sessionIdToUser.get(sessionId).name;
+					User user = sessionIdToUser.get(sessionId);
+					
+					name = user.name;
+					if (user instanceof Spectator) {
+						spectatorString = " as a spectator";
+					}
 				}
 				
-				sendGameMessage(name+" joined the game");
-				
+				sendGameMessage(name+" joined the game"+spectatorString);
 			}
-			
-			//TODO handle different user types (player vs spectator)
-			//maybe dont set user type immediately and let them send a message indicating what
-			//they want to change to? would suggest combining Player and Spectator classes
 			
 			return;
 		}
@@ -481,8 +482,14 @@ public class Game {
 			case "createUser":
 				
 				String username = map.getString("username");
+				boolean isSpectator = map.getBoolean("isSpectator");
 				
-				sessionIdToUser.put(sessionId, new Player(username, sessionId));
+				System.out.println("createUser: isSpectator is "+isSpectator+" for session id "+sessionId);
+				if (isSpectator) {
+					sessionIdToUser.put(sessionId, new Spectator(username, sessionId));
+				} else {
+					sessionIdToUser.put(sessionId, new Player(username, sessionId));
+				}
 				
 				return response;
 				
@@ -494,6 +501,10 @@ public class Game {
 				if (timerRunning) {
 					response.put("timerValue", timerValue);
 				}
+				
+				isSpectator = sessionIdToUser.get(sessionId) instanceof Spectator;
+				System.out.println("state: isSpectator is "+isSpectator+" for session id "+sessionId);
+				response.put("isSpectator", isSpectator);
 				
 				response.put("currentState", currentState.name());
 				
