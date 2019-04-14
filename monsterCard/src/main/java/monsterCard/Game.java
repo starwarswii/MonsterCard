@@ -11,7 +11,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Function;
 import org.json.JSONObject;
 import io.javalin.websocket.WsSession;
 
@@ -80,10 +79,7 @@ public class Game {
 		websocketToSessionId = new HashMap<>();
 		sessionIdToUser = new HashMap<>();
 		
-		//player1 = null;
 		votes1 = 0;
-		
-		//player2 = null;
 		votes2 = 0;
 		
 		currentRound = 0;
@@ -169,7 +165,7 @@ public class Game {
 	private void sendGameMessage(String message) {
 		sendToAll(new JSONObject()
 			.put("type", "chat")
-			.put("sender", "GAME")
+			.put("sender", ":")
 			.put("message", message)
 		);
 	}
@@ -188,32 +184,6 @@ public class Game {
 		}
 		
 		return players;
-	}
-	
-	private List<String> getPlayerIds() {
-		ArrayList<String> sessionIds = new ArrayList<>();
-		
-		for (Entry<String, User> entry : sessionIdToUser.entrySet()) {
-			
-			if (entry.getValue() instanceof Player) {
-				sessionIds.add(entry.getKey());
-			}
-		}
-		
-		return sessionIds;
-	}
-	
-	private List<Spectator> getSpectators() {
-		ArrayList<Spectator> spectators = new ArrayList<>();
-		
-		for (User user : sessionIdToUser.values()) {
-			
-			if (user instanceof Spectator) {
-				spectators.add((Spectator)user);
-			}
-		}
-		
-		return spectators;
 	}
 	
 	private Map<Player, Set<WsSession>> getPlayersToWebsockets() {
@@ -262,9 +232,9 @@ public class Game {
 		//when socket closes, we still have user, but they're "away" or something
 		//add button to leave game, this removes player from game
 		
-		System.out.println(map);
-		
 		String type = map.getString("type");
+		
+		System.out.println("handling message of type "+type);
 		
 		if (type.equals("linkWebsocket")) {
 			String sessionId = map.getString("sessionId");
@@ -290,18 +260,19 @@ public class Game {
 				//by the time this is called, the user should already be set up from the http calls
 				//but just in case, we check first
 				String name = "an unidentified user";
+				String spectatorString = "";
 				
 				if (sessionIdToUser.containsKey(sessionId)) {
-					name = sessionIdToUser.get(sessionId).name;
+					User user = sessionIdToUser.get(sessionId);
+					
+					name = user.name;
+					if (user instanceof Spectator) {
+						spectatorString = " as a spectator";
+					}
 				}
 				
-				sendGameMessage(name+" joined the game");
-				
+				sendGameMessage(name+" joined the game"+spectatorString);
 			}
-			
-			//TODO handle different user types (player vs spectator)
-			//maybe dont set user type immediately and let them send a message indicating what
-			//they want to change to? would suggest combining Player and Spectator classes
 			
 			return;
 		}
@@ -405,10 +376,13 @@ public class Game {
 						} else if (currentRound < MAX_ROUNDS){
 							//end of round, but not end of game, shuffle and go to drawing
 							shuffleCards();
+							displayScores(false);
 							transitionToState(State.DRAWING);
 							
 						} else {
 							//end of round and end of game, go to endgame
+							displayScores(true);
+							resetScores();
 							transitionToState(State.END_GAME);
 						}
 						
@@ -429,21 +403,15 @@ public class Game {
 						transitionToState(State.BEFORE_GAME);
 						break;
 				}
-				
-				System.out.println(currentState.name());
 
-				
 				break;
 				
 			case "vote":
-				//TODO move vote if previously voted
-				//Get the value representing the card the user intended to vote for, and increment its vote count
+				
 				int vote = map.getInt("value");
-				if (vote == 1) {
-					votes1++;
-				} else {
-					votes2++;
-				}
+				
+				incrementVote(user, vote);
+				
 				//Send the updated vote counts to all clients
 				sendToAll(new JSONObject()
 					.put("type", "vote")
@@ -453,7 +421,6 @@ public class Game {
 				
 				break;
 				
-				
 			case "leaveGame":
 				if (!isOwner(sessionId)) {
 					sessionIdToUser.remove(sessionId);
@@ -462,6 +429,7 @@ public class Game {
 					
 				} else {
 					//TODO how to handle owner leaving?
+					//could like close the game and kick everyone or somthing
 					System.out.println("owner tried to leave game, ignoring");
 				}
 				break;
@@ -476,6 +444,8 @@ public class Game {
 		
 		String type = map.getString("type");
 		String sessionId = map.getString("sessionId");
+		
+		System.out.println("handling message of type "+type);
 		
 		JSONObject response = new JSONObject();
 		
@@ -496,8 +466,13 @@ public class Game {
 			case "createUser":
 				
 				String username = map.getString("username");
+				boolean isSpectator = map.getBoolean("isSpectator");
 				
-				sessionIdToUser.put(sessionId, new Player(username, sessionId));
+				if (isSpectator) {
+					sessionIdToUser.put(sessionId, new Spectator(username, sessionId));
+				} else {
+					sessionIdToUser.put(sessionId, new Player(username, sessionId));
+				}
 				
 				return response;
 				
@@ -510,10 +485,13 @@ public class Game {
 					response.put("timerValue", timerValue);
 				}
 				
+				isSpectator = sessionIdToUser.get(sessionId) instanceof Spectator;
+				
+				response.put("isSpectator", isSpectator);
+				
 				response.put("currentState", currentState.name());
 				
 				if (currentState == State.VOTING) {
-					//TODO add support for displaying player's names alongside cards
 					response.put("card1", getPlayer1().getCardString());
 					response.put("card2", getPlayer2().getCardString());
 				}
@@ -586,16 +564,26 @@ public class Game {
 	public void transitionToState(State state) {
 		JSONObject json = new JSONObject();
 		
-		currentState = state;
-		
 		json.put("type", "changeState");
-		json.put("currentState", currentState.name());
+		json.put("currentState", state.name());
 		
-		if (currentState == State.VOTING) {
-			//TODO add support for displaying player's names alongside cards
-			json.put("card1", getPlayer1().getCardString());
-			json.put("card2", getPlayer2().getCardString());
+		//if we're transitioning to voting
+		if (state == State.VOTING) {
+			clearVotes();
+			
+			Player player1 = getPlayer1();
+			Player player2 = getPlayer2();
+			
+			json.put("player1", player1.name);
+			json.put("card1", player1.getCardString());
+			
+			json.put("player2", player2.name);
+			json.put("card2", player2.getCardString());
 		}
+		
+		//perform transition
+		currentState = state;
+		System.out.println("transitioned to state "+currentState.name());
 		
 		sendToAll(json);
 	}
@@ -610,9 +598,22 @@ public class Game {
 		if (votes1 > votes2) {
 			winner = getPlayer1();
 			loser = getPlayer2();
-		} else {
+			
+		} else if (votes1 < votes2) {
 			winner = getPlayer2();
 			loser = getPlayer1();
+			
+		} else {
+			
+			//do random tiebreaking
+			if (random.nextBoolean()) {
+				winner = getPlayer1();
+				loser = getPlayer2();
+				
+			} else {
+				winner = getPlayer2();
+				loser = getPlayer1();
+			}
 		}
 		
 		winner.score++;
@@ -657,18 +658,62 @@ public class Game {
 		}
 	}
 	
-	//TODO did not include:
-	//addPlayer()
-	//addSpectator()
-	//removePlayer()
-	//removeSpecator()
-	//quit()
-	//main()
-	//at the moment it's not totally clear how players/spectators will be added to
-	//games, but it will probably be through websockets. if there are functions to add them,
-	//(which would end up being very simple anyway), they would be private
-	//we're also not sure how stopping/ending/quitting a game will work. the game
-	//might notify the manager, which will do it
-	//main() may come back, or it may be spread out across various functions/stuff in handleMessage()
-	//also we need to figure out how cards will work. will we have List<Card>? instance of Dealer?
+	public void displayScores(boolean showWinner) {
+		List<Player> players = getPlayers();
+		
+		//sort by score
+		//note we use reverse order of p1, p2 in the compare, so we sort high to low
+		Collections.sort(players, (p1, p2) -> Integer.compare(p2.score, p1.score));
+		
+		sendGameMessage("current scores:");
+		for (Player player : players) {
+			sendGameMessage(player.name+": "+player.score);
+		}
+		
+		if (showWinner) {
+			sendGameMessage(players.get(0).name+" wins!");
+		}
+	}
+	
+	public void resetScores() {
+		for (Player player : getPlayers()) {
+			player.score = 0;
+		}
+	}
+	
+	public void incrementVote(User user, int newVote) {
+		
+		int oldVote = user.currentVote;
+		
+		//if they didn't vote before, add vote normally
+		if (oldVote == -1) {
+			
+			if (newVote == 1) {
+				votes1++;
+			} else {
+				votes2++;
+			}
+			
+		//else if the're changing their vote, remove from old one
+		} else if (oldVote != newVote) {
+			if (newVote == 1) {
+				votes2--;
+				votes1++;
+			} else {
+				votes1--;
+				votes2++;
+			}
+		}
+		
+		//else the old and new vote were the same, so we do nothing
+		
+		//and in all cases, update the new old vote to the new vote
+		user.currentVote = newVote;
+	}
+	
+	public void clearVotes() {
+		for (User user : sessionIdToUser.values()) {
+			user.currentVote = -1;
+		}
+	}
 }

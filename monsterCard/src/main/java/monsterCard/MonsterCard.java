@@ -77,6 +77,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		});
 		
 		app.post("/state/:id", ctx -> {
+			System.out.println("got http post request");
 			//TODO all this stuff should probably live in Game
 			//and then moved to the websocket handling class
 			//that class might be better handling arbitrary messages
@@ -123,7 +124,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 
 			ws.onMessage((session, response) -> {
 				int id = Integer.parseInt(session.pathParam("id"));
-				System.out.println("got message from "+session.host()+" with id "+session.getId()+": "+response);
+				System.out.println("got message from "+session.host()+" with id "+session.getId());
 				
 				manager.getGame(id).handleMessage(session, new JSONObject(response));
 			});

@@ -48,6 +48,24 @@ util.postJson = function(url, data, success) {
 
 //redirects to the given url, keeping url parameters
 //this allows us to keep our fake session id if it's present
-util.redirect = function(url) {
-	window.location.href = url + document.location.search
+//if spec is unset nothing more happens
+//if spec is true, spec=1 is added
+//if spec is false, it is removed
+util.redirect = function(url, spec) {
+	
+	if (spec === undefined) {
+		window.location.href = url + document.location.search
+		return;
+	}
+	
+	var obj = new URL(window.location.href);
+	
+	if (spec) {
+		obj.searchParams.set("spec", 1);
+	} else {
+		obj.searchParams.delete("spec");
+	}
+	
+	//search contains the question mark, searchParams.toString() does not
+	window.location.href = url + obj.search;
 };

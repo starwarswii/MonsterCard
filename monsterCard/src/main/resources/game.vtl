@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<title>Game</title>
+		<title>Game $id ($gameName)</title>
 		
 		<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/js-cookie@2.2.0/src/js.cookie.js"></script>
@@ -12,83 +12,78 @@
 		<script src="/util.js"></script>
 		<script src="/game.js"></script>
 		
-		<style type="text/css">
-			#wrapper {
-				display: inline-block;
-			}
-			#results-c1, #results-c2 {
-				width: 390px;
-				min-height: 40px;
-				display: inline-block;
-				padding: 5px;
-				margin: 0 6px 15px 0;
-				float: left;
-			}
-		</style>
+		<link rel="stylesheet" href="/game.css">
 	</head>
-
 	<body>
 		<!-- TODO could possibly display:none everything till the "enter your name" box goes away -->
-	    <h3>You're in Game $id ($gameName)</h3>
+		<h3>You're in Game $id ($gameName)</h3>
 
-		<div id="currentState">no state</div>
 
-		<button id="leave">leave game</button>
-        <button id="next">Next</button>
-        <br>
-        <br>
-        <div id="chat"></div>
-        <input id="messageBox" placeholder="Type your message">
-        <button id="send">Send</button>
+	    <div id="grid">
+	        <div id="header">
+                <div id="currentState">no state</div>
 
-        <div id="timer">not running</div>
-        <button id="start">start</button>
+                <button id="leave">leave game</button>
+                <button id="next">Next</button>
 
-        <br><br>
-        <div id="voteButtons" style="display: inline-block">
-            <button id="vote1">Vote 1</button>
-            <button id="vote2">Vote 2</button>
-        </div>
-
-        <div id="voteScore" style="display: inline-block">
-            <div id="score1">Card 1: 0</div>
-            <div id="score2">Card 2: 0</div>
-        </div>
-
-		<br>
-		<div id="wrapper">
-			<div id="results-c1">Drawing Canvas</div>​
-
-			<div id="canvasControls" style="display: inline-block; margin-left: 10px; margin-top: 10px">
-                <button id="clearcanvas">Clear</button>
                 <br>
-                <div id="drawing_modeoptions"></div>
-                <label for="drawing_linewidth">Line width:</label>
-                <span class="info">30</span><input type="range" value="30" min="0" max="150" id="drawing_linewidth">
                 <br>
-                <label for="drawing_color">Line color:</label>
-                <input type="color" value="#000000" id="drawing_color">
+
+                <div id="chat"></div>
+                <input id="messageBox" placeholder="Type your message">
+                <button id="send">Send</button>
+
                 <br>
-                <button id="save">Send to Server</button>
+                <br>
+
+                <div id="timer">not running</div>
+                <button id="start">start</button>
             </div>
-			<br>
-			<br>
-			<canvas id="c1" width="400" height="400" style="border:1px solid black"></canvas>
-            <br>
-            <div id="results-c2">Display Canvas</div>
-            <br>
-            <div id="hider">
-            <canvas id="c2" width="400" height="400" style="border:1px solid black"></canvas>
-            </div>
-		</div>
-        <br>
 
+            <div id="displayCanvas">
+                <div id="results-c1">Card 1</div>
+                <div id="results-c2">Card 2</div>
+                <canvas id="c1" width="400" height="400"></canvas>
+                <canvas id="c2" width="400" height="400"></canvas>
+                <button id="vote1">Vote</button>
+                <button id="vote2">Vote</button>
+                <div id="score1">Votes: 0</div>
+                <div id="score2">Votes: 0</div>
+            </div>
+
+            <div id="wrapper">
+                <div id="results-draw">Drawing Canvas</div>
+                ​
+                <div id="canvasControls">
+                    <button id="clearcanvas">Clear</button>
+                    <br>
+
+                    <div id="drawing_modeoptions"></div>
+
+                    <label for="drawing_linewidth">Line width:</label>
+                    <span class="info">30</span>
+                    <input type="range" value="30" min="0" max="150" id="drawing_linewidth">
+                    <br>
+
+                    <label for="drawing_color">Line color:</label>
+                    <input type="color" value="#000000" id="drawing_color">
+                    <br>
+
+                    <button id="save">Send to Server</button>
+                </div>
+                <br>
+                <br>
+                <div id="drawCanvas">
+                    <canvas id="drawC" width="400" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+	
 		<!-- TODO incorporate? -->
 		<!-- <ul id="userList"></ul> -->
-		
+	
 		<!-- used to tell the javascript what game we're in -->
 		<!-- could probably also get the url to tell -->
-		<div id="gameId" style="display:none">$id</div>
-
+		<div id="gameId" style="display: none">$id</div>
 	</body>
 </html>

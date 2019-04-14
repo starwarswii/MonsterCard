@@ -28,9 +28,15 @@ $(function() {
 				var id = game.id;
 				var name = game.name;
 				
-				//worth noting that clicking on these game links will not keep url parameters
-				//so for testing, with fake url-session ids, just visit games directly
-				$games.append("<a href=\"/game/"+id+"\">Join Game "+id+" ("+name+")</a><br>");
+				var joinButton = $("<button>Join</button>").click(function() {
+					util.redirect("/game/"+id);
+				});
+				
+				var spectateButton = $("<button>Spectate</button>").click(function() {
+					util.redirect("/game/"+id, true);
+				});
+				
+				$games.append("Game "+id+" ("+name+")&nbsp;", joinButton, "&nbsp;", spectateButton, "<br>");
 			}
 			
 		});
