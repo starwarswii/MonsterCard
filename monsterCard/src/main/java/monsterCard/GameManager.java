@@ -14,9 +14,13 @@ import io.javalin.websocket.MessageHandler;
 import io.javalin.websocket.WsHandler;
 import io.javalin.websocket.WsSession;
 
+//handles list of games, and is responsible for forwarding websocket and http requests
+//to the corresponding game
 public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHandler, MessageHandler, Handler {
 	
+	//the next game id to be used
 	int nextGameId;
+	
 	Map<Integer, Game> games;
 	
 	public GameManager() {
@@ -34,6 +38,8 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 		handler.onMessage(this);
 	}
 	
+	//creates a new game with given owner and name
+	//returns the id of the created game
 	public int createGame(String owner, String name) {
 		if (name == null) {
 			name = "Game "+nextGameId;
@@ -43,6 +49,9 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 		return nextGameId++; //increment, but return the old value
 	}	
 	
+	//returns a json array of games in the format
+	//[{id:1, name:"game"}, etc]
+	//this is used by the frontend to render the game list
 	public JSONArray getGamesJson() {
 		JSONArray array = new JSONArray();
 		
@@ -54,6 +63,7 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 			object.put("id", id);
 			object.put("name", game.gameName);
 			
+			//append game to the array
 			array.put(object);
 		}
 		
@@ -100,7 +110,8 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 		return games.get(id);
 	}
 	
-	//websocket connect handler
+	//websocket connect handler. called by javalin
+	//we get the corresponding game id and forward handling to that game
 	public void handle(WsSession session) throws Exception {
 		System.out.println("websocket connection made from "+session.host()+" with id "+session.getId());
 		
@@ -111,7 +122,8 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 		}
 	}
 
-	//websocket close handler
+	//websocket close handler. called by javalin
+	//we get the corresponding game id and forward handling to that game
 	public void handle(WsSession session, int statusCode, String reason) throws Exception {
 		System.out.println("websocket connection closed from "+session.host()+" with id "+session.getId()+". "+statusCode+": "+reason);
 		
@@ -122,18 +134,21 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 		}
 	}
 	
-	//websocket message handler
+	//websocket message handler. called by javalin
+	//we get the corresponding game id and forward handling to that game
 	public void handle(WsSession session, String msg) throws Exception {
 		System.out.println("got message from "+session.host()+" with id "+session.getId());
 		
 		Game game = getValidGame(session);
 		
 		if (game != null) {
+			//we convert the string to a json object before giving to the game
 			game.handleMessage(session, new JSONObject(msg));
 		}
 	}
 
-	//http handler
+	//http handler. called by javalin
+	//we get the corresponding game id and forward handling to that game
 	public void handle(Context ctx) throws Exception {
 		System.out.println("got http post request");
 		
@@ -149,7 +164,7 @@ public class GameManager implements Consumer<WsHandler>, ConnectHandler, CloseHa
 			return;
 		}
 		
+		//again, get body of message as string and convert to json before giving to game
 		ctx.result(game.handleHttpMessage(new JSONObject(ctx.body())).toString());
-		
 	}
 }

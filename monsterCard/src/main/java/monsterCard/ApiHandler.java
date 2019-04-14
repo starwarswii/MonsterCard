@@ -7,6 +7,8 @@ import java.util.function.Function;
 import org.json.JSONObject;
 import io.javalin.websocket.WsSession;
 
+//holds a series of mappings from type to function for handling requests
+//constructed and used by Game
 public class ApiHandler {
 	
 	//mapping of message type to function handles that type
@@ -14,6 +16,7 @@ public class ApiHandler {
 	Map<String, BiConsumer<WsSession, JSONObject>> websocketMap;
 	
 	//mapping of message type to function that handles that type and returns the response
+	//given the data
 	Map<String, Function<JSONObject, JSONObject>> httpMap;
 	
 	public ApiHandler() {
@@ -21,6 +24,7 @@ public class ApiHandler {
 		httpMap = new HashMap<>();
 	}
 	
+	//these two functions just put the given (type, function) binding into one of the maps
 	public void registerWebsocketHandler(String type, BiConsumer<WsSession, JSONObject> function) {
 		websocketMap.put(type, function);
 	}
@@ -29,6 +33,7 @@ public class ApiHandler {
 		httpMap.put(type, function);
 	}
 	
+	//these two functions do a lookup into the map and call the corresponding function
 	public void handleWebsocketMessage(WsSession websocket, JSONObject map) {
 		if (!isValidMessage(map)) {
 			return;

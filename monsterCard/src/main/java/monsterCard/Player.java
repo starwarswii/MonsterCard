@@ -1,26 +1,27 @@
 package monsterCard;
 
+//represents an actual player in the game. holds a card
 public class Player extends User {
-	//TODO maybe just a string? but then less extendible? donno
 	Card card;
-	int score;
+	int score; //current overall game score
 	
 	public Player(String name, String sessionId) {
 		super(name, sessionId);
-		//TODO put username in card? probably not needed at this point
-		card = new Card();
+		card = new Card(); //give the player a new blank card
 		score = 0;
 	}
 	
+	//reset the card
 	public void clearCard() {
 		card = new Card();
 	}
 	
-	//Allows user to draw on their canvas and save the results to their card
+	//update the user's card with a new card image
 	public void updateCard(String svgString) {
 		card.update(svgString);
 	}
 	
+	//get the current image on the card as an svg string
 	public String getCardString() {
 		return card.getSvgString();
 	}
