@@ -12,7 +12,7 @@ $(function() {
 	var $drawingLineWidth = $("#drawing_linewidth");
 
 	// image sender
-	//TODO rename
+	//TODO rename?
 	var $save = $("#save");
 
 	// timer items
@@ -43,17 +43,13 @@ $(function() {
 	var $leave = $("#leave");
 
 	// CANVAS CODE =====================================================================================================
-	// intilize drawing canvas, allows drawing
-	var drawC = new fabric.Canvas('drawC', {
-		isDrawingMode: true
-	});
-	// intilize display canvas, unable to edit only displays image of what was retrieved from server
-	var c1 = new fabric.StaticCanvas('c1', {
-		selectable: false
-	});
-	var c2 = new fabric.StaticCanvas('c2', {
-		selectable: false
-	});
+	
+	// initialize drawing canvas, allows drawing
+	var drawC = new fabric.Canvas('drawC', {isDrawingMode: true});
+	
+	// initialize display canvas, unable to edit only displays image of what was retrieved from server
+	var c1 = new fabric.StaticCanvas('c1', {selectable: false});
+	var c2 = new fabric.StaticCanvas('c2', {selectable: false});
 
 	var undo = []; // undo stack
 	var redo = []; // redo stack
@@ -94,9 +90,11 @@ $(function() {
 
 				$("#results-c1").text("Card 1: by "+map.player1);
 				loadImg(c1, map.card1);
+				$score1.text("Votes: "+map.votes1);
 				
 				$("#results-c2").text("Card 2: by "+map.player2);
 				loadImg(c2, map.card2);
+				$score2.text("Votes: "+map.votes2);
 
 				break;
 
@@ -149,6 +147,8 @@ $(function() {
 	function initializeEnd() {
 		$wrapper.hide();
 		$canvasControl.hide();
+		$("#drawCanvas").hide();
+		$("#displayCanvas").hide();
 	}
 
 	// when canvas is modified, record any changes to the undo stack and clear redo stack

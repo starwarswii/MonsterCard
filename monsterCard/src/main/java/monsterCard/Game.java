@@ -67,6 +67,8 @@ public class Game {
 	
 	Random random;
 	
+	ApiHandler handler;
+	
 	public Game(String ownerId, String gameName) {
 		this.ownerId = ownerId;
 		this.gameName = gameName;
@@ -88,6 +90,10 @@ public class Game {
 		currentState = State.BEFORE_GAME;
 		
 		random = new Random();
+		
+		handler = new ApiHandler();
+		registerWebsocketHandlers();
+		registerHttpHandlers();
 	}
 	
 	public boolean isOwner(String sessionId) {
@@ -216,6 +222,233 @@ public class Game {
  
 	}
 	
+	public void registerWebsocketHandlers() {
+		
+		//TODO we could likely get away with passing in session id instead of websocket
+		//we don't seem to use actual websocket, and could just require the websocket to be linked
+		//before calling any of these api functions
+		
+		handler.registerWebsocketHandler("chat", (websocket, map) -> {
+			String sessionId = websocketToSessionId.get(websocket);
+			User user = sessionIdToUser.get(sessionId);
+			
+			String message = map.getString("message");
+			String sender = user.name;
+			
+			//TODO add support for user list
+			//could be type:chat, event:join
+			//and type:chat event:message for what this is now
+			
+			sendToAll(new JSONObject()
+				.put("type", "chat")
+				.put("sender", sender)
+				.put("message", message)
+			);
+		});
+		
+		handler.registerWebsocketHandler("timer", (websocket, map) -> {
+			String sessionId = websocketToSessionId.get(websocket);
+			
+			String command = map.getString("command");
+			
+			//the only command for now is start
+			if (!command.equals("start")) {
+				System.out.println("unrecognized timer command "+command);
+				return;
+			}
+			
+			if (isOwner(sessionId)) {
+				System.out.println("starting!");
+				//also notifies everyone
+				startTimer();
+				
+			} else {
+				System.out.println("someone who wasn't the owner attempted to start the timer. ignoring");
+			}
+		});
+		
+		handler.registerWebsocketHandler("card", (websocket, map) -> {
+			String sessionId = websocketToSessionId.get(websocket);
+			User user = sessionIdToUser.get(sessionId);
+			
+			if (!(user instanceof Player)) {
+				System.out.println("someone who wasn't a player tried to update their card. ignoring");
+				return;
+			}
+			
+			String svgString = map.getString("value");
+			((Player)user).updateCard(svgString);
+
+		});
+		
+		handler.registerWebsocketHandler("changeState", (websocket, map) -> {
+			String sessionId = websocketToSessionId.get(websocket);
+			
+			if (!isOwner(sessionId)) {
+				System.out.println("someone who wasn't the owner attempted to change the state. ignoring");
+				return;
+			}
+			
+			//Switch from the current game state to the next. The game follows a set order of states, so we can just
+			//proceed with a given order
+			
+			//TODO could put these rules inside the enum itself maybe
+			switch (currentState) {
+				case BEFORE_GAME:
+					
+					transitionToState(State.DRAWING);
+					break;
+					
+				case DRAWING:
+					
+					createMatchups(); //also increments round
+					loadMatchup();
+					
+					transitionToState(State.VOTING);
+					break;
+					
+				case VOTING:
+
+					determineWinner();
+					
+					if (loadMatchup()) {
+						//in middle of round, go to voting
+						transitionToState(State.VOTING);
+						
+					} else if (currentRound < MAX_ROUNDS){
+						//end of round, but not end of game, shuffle and go to drawing
+						shuffleCards();
+						displayScores(false);
+						transitionToState(State.DRAWING);
+						
+					} else {
+						//end of round and end of game, go to endgame
+						displayScores(true);
+						resetScores();
+						transitionToState(State.END_GAME);
+					}
+					
+					break;
+					
+				case END_GAME:
+					
+					//for now, we transition back to starting state, and reset
+					//TODO remove probably
+					
+					currentRound = 0;
+					
+					sendToAll(new JSONObject()
+						.put("type", "card")
+						.put("clear", true)
+					);
+					
+					transitionToState(State.BEFORE_GAME);
+			}
+		});
+		
+		handler.registerWebsocketHandler("vote", (websocket, map) -> {
+			String sessionId = websocketToSessionId.get(websocket);
+			User user = sessionIdToUser.get(sessionId);
+			
+			int vote = map.getInt("value");
+			
+			incrementVote(user, vote);
+			
+			//Send the updated vote counts to all clients
+			sendToAll(new JSONObject()
+				.put("type", "vote")
+				.put("votes1", votes1)
+				.put("votes2", votes2)
+			);
+		});
+		
+		handler.registerWebsocketHandler("leaveGame", (websocket, map) -> {
+			String sessionId = websocketToSessionId.get(websocket);
+			User user = sessionIdToUser.get(sessionId);
+			
+			if (!isOwner(sessionId)) {
+				sessionIdToUser.remove(sessionId);
+				
+				sendGameMessage(user.name+" left the game");
+				
+			} else {
+				//TODO how to handle owner leaving?
+				//could like close the game and kick everyone or something
+				System.out.println("owner tried to leave game, ignoring");
+			}
+		});
+	}
+	
+	public void registerHttpHandlers() {
+		
+		handler.registerHttpHandler("amINew", map -> {
+			JSONObject response = new JSONObject();
+			
+			String sessionId = map.getString("sessionId");
+			
+			boolean newUser = !sessionIdToUser.containsKey(sessionId);
+			
+			response.put("newUser", newUser);
+			
+			if (!newUser) {
+				response.put("username", sessionIdToUser.get(sessionId).name);
+			}
+			
+			return response;
+		});
+		
+		handler.registerHttpHandler("createUser", map -> {
+			JSONObject response = new JSONObject();
+			
+			String sessionId = map.getString("sessionId");
+			
+			String username = map.getString("username");
+			boolean isSpectator = map.getBoolean("isSpectator");
+			
+			if (isSpectator) {
+				sessionIdToUser.put(sessionId, new Spectator(username, sessionId));
+			} else {
+				sessionIdToUser.put(sessionId, new Player(username, sessionId));
+			}
+			
+			return response;
+		});
+		
+		handler.registerHttpHandler("state", map -> {
+			JSONObject response = new JSONObject();
+			
+			String sessionId = map.getString("sessionId");
+			
+			response.put("isOwner", isOwner(sessionId));
+			response.put("timerRunning", timerRunning);
+			
+			if (timerRunning) {
+				response.put("timerValue", timerValue);
+			}
+			
+			boolean isSpectator = sessionIdToUser.get(sessionId) instanceof Spectator;
+			
+			response.put("isSpectator", isSpectator);
+			
+			response.put("currentState", currentState.name());
+			
+			if (currentState == State.VOTING) {
+				Player player1 = getPlayer1();
+				Player player2 = getPlayer2();
+				
+				response.put("player1", player1.name);
+				response.put("card1", player1.getCardString());
+				response.put("votes1", votes1);
+				
+				response.put("player2", player2.name);
+				response.put("card2", player2.getCardString());
+				response.put("votes2", votes2);
+			}
+			
+			return response;
+		});
+	}
+	
 	public void handleConnect(WsSession websocket) {
 		//this is probably no-op
 	}
@@ -224,33 +457,17 @@ public class Game {
 		websocketToSessionId.remove(websocket);
 	}
 	
-	public void handleMessage(WsSession websocket, JSONObject map) {
+	public void handleMessage(WsSession websocket, JSONObject map) {	
+		if (!ApiHandler.isValidMessage(map)) {
+			return;
+		}
 		
-		//TODO have sockets tell you their session id on connection, use that to figure out who it is
-		//need a distinction between player/user and socket connection
-		
-		//when socket closes, we still have user, but they're "away" or something
-		//add button to leave game, this removes player from game
-		
+		//we do most handling using the ApiHandler, but we have a special case for the
+		//linkWebsocket message type, as that needs to occur first
 		String type = map.getString("type");
-		
-		System.out.println("handling message of type "+type);
 		
 		if (type.equals("linkWebsocket")) {
 			String sessionId = map.getString("sessionId");
-			
-			//TODO let everyone else know a user joined?
-			//with chat message
-			//or maybe that behavior should be somewhere else
-			
-			//TODO could specify if player or spectator,
-			//websocket -> (sessionId, isSpectator)
-			//then sessionid -> player or sessionid -> spectator
-			
-			//TODO need to add support for users leaving the game
-			//could be done with certain message, or timeout?
-			//what should happen when owner leaves game?
-			//could close game, or assign another owner, or something
 			
 			boolean newUser = !websocketToSessionId.containsValue(sessionId);
 			
@@ -278,231 +495,25 @@ public class Game {
 		}
 		
 		if (!websocketToSessionId.containsKey(websocket)) {
-			System.out.println("got message from unrecognized session "+websocket+", ignoring");
+			System.out.println("got message from unauthenticated (unlinked) websocket "+websocket.getId()+", ignoring");
 			return;
 		}
 		
 		//at this point, this method ensures that this websocket is bound to a session id
-		String sessionId = websocketToSessionId.get(websocket);
 		
-		//the order of calls on the client side should ensure that at this point we also have a user object
+		//the order of calls on the client side should also ensure that at this point we also have a user object
 		//connected to the given session id. this is because the http api "createUser" request should be performed
 		//before opening the websocket, and reaching this point
-		User user = sessionIdToUser.get(sessionId);
 		
-		switch (type) {
+		//User user = sessionIdToUser.get(sessionId);
 		
-			case "chat":
-				
-				String message = map.getString("message");
-				String sender = user.name;
-				
-				//TODO add support for user list
-				//could be type:chat, event:join
-				//and type:chat event:message for what this is now
-				
-				sendToAll(new JSONObject()
-					.put("type", "chat")
-					.put("sender", sender)
-					.put("message", message)
-				);
-
-				break;
-				
-			case "timer":
-				
-				String command = map.getString("command");
-				
-				switch (command) {
-					case "start":
-						
-						if (isOwner(sessionId)) {
-							System.out.println("starting!");
-							//also notifies everyone
-							startTimer();
-							
-						} else {
-							System.out.println("someone who wasn't the owner attempted to start the timer. ignoring");
-						}
-						
-						break;
-						
-					default:
-						System.out.println("unrecognized timer command "+command);
-				}
-				
-				break;
-
-			case "card":
-				String svgString = map.getString("value");
-				
-				((Player)user).updateCard(svgString);
-
-				break;
-				
-			case "changeState":
-				
-				if (!isOwner(sessionId)) {
-					System.out.println("someone who wasn't the owner attempted to change the state. ignoring");
-					return;
-				}
-				
-				//Update the internal game state
-				
-				//Switch from the current game state to the next. The game follows a set order of states, so we can just
-				//proceed with a given order
-				switch (currentState) {
-					case BEFORE_GAME:
-						
-						transitionToState(State.DRAWING);
-						break;
-						
-					case DRAWING:
-						
-						createMatchups(); //also increments round
-						loadMatchup();
-						
-						transitionToState(State.VOTING);
-						break;
-						
-					case VOTING:
-
-						determineWinner();
-						
-						if (loadMatchup()) {
-							//in middle of round, go to voting
-							transitionToState(State.VOTING);
-							
-						} else if (currentRound < MAX_ROUNDS){
-							//end of round, but not end of game, shuffle and go to drawing
-							shuffleCards();
-							displayScores(false);
-							transitionToState(State.DRAWING);
-							
-						} else {
-							//end of round and end of game, go to endgame
-							displayScores(true);
-							resetScores();
-							transitionToState(State.END_GAME);
-						}
-						
-						break;
-						
-					case END_GAME:
-						
-						//for now, we transition back to starting state, and reset
-						//TODO remove probably
-						
-						currentRound = 0;
-						
-						sendToAll(new JSONObject()
-							.put("type", "card")
-							.put("clear", true)
-						);
-						
-						transitionToState(State.BEFORE_GAME);
-						break;
-				}
-
-				break;
-				
-			case "vote":
-				
-				int vote = map.getInt("value");
-				
-				incrementVote(user, vote);
-				
-				//Send the updated vote counts to all clients
-				sendToAll(new JSONObject()
-					.put("type", "vote")
-					.put("votes1", votes1)
-					.put("votes2", votes2)
-				);
-				
-				break;
-				
-			case "leaveGame":
-				if (!isOwner(sessionId)) {
-					sessionIdToUser.remove(sessionId);
-					
-					sendGameMessage(user.name+" left the game");
-					
-				} else {
-					//TODO how to handle owner leaving?
-					//could like close the game and kick everyone or somthing
-					System.out.println("owner tried to leave game, ignoring");
-				}
-				break;
-				
-			default:
-				System.out.println("unrecognized message type "+type);
-			
-		}
+		//handle any other type of message
+		handler.handleWebsocketMessage(websocket, map);
 	}
 	
-	public JSONObject handleHttp(JSONObject map) {
+	public JSONObject handleHttpMessage(JSONObject map) {
+		return handler.handleHttpMessage(map);
 		
-		String type = map.getString("type");
-		String sessionId = map.getString("sessionId");
-		
-		System.out.println("handling message of type "+type);
-		
-		JSONObject response = new JSONObject();
-		
-		switch (type) {
-		
-			case "amINew":
-				
-				boolean newUser = !sessionIdToUser.containsKey(sessionId);
-				
-				response.put("newUser", newUser);
-				
-				if (!newUser) {
-					response.put("username", sessionIdToUser.get(sessionId).name);
-				}
-				
-				return response;
-				
-			case "createUser":
-				
-				String username = map.getString("username");
-				boolean isSpectator = map.getBoolean("isSpectator");
-				
-				if (isSpectator) {
-					sessionIdToUser.put(sessionId, new Spectator(username, sessionId));
-				} else {
-					sessionIdToUser.put(sessionId, new Player(username, sessionId));
-				}
-				
-				return response;
-				
-			case "state":
-				
-				response.put("isOwner", isOwner(sessionId));
-				response.put("timerRunning", timerRunning);
-				
-				if (timerRunning) {
-					response.put("timerValue", timerValue);
-				}
-				
-				isSpectator = sessionIdToUser.get(sessionId) instanceof Spectator;
-				
-				response.put("isSpectator", isSpectator);
-				
-				response.put("currentState", currentState.name());
-				
-				if (currentState == State.VOTING) {
-					response.put("card1", getPlayer1().getCardString());
-					response.put("card2", getPlayer2().getCardString());
-				}
-				
-				return response;
-				
-			default:
-				System.out.println("unrecognised http api type "+type+", ignoring");
-				response.put("error", "invalid type");
-				return response;
-		}
 	}
 	
 	//constructs the matchups list
@@ -576,9 +587,11 @@ public class Game {
 			
 			json.put("player1", player1.name);
 			json.put("card1", player1.getCardString());
+			json.put("votes1", votes1);
 			
 			json.put("player2", player2.name);
 			json.put("card2", player2.getCardString());
+			json.put("votes2", votes2);
 		}
 		
 		//perform transition
