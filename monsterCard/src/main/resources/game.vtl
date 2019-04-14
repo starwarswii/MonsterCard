@@ -19,65 +19,65 @@
 		<h3>You're in Game $id ($gameName)</h3>
 
 
-	    <div id="grid">
-	        <div id="header">
-                <div id="currentState">no state</div>
+		<div id="grid">
+			<div id="header">
+			
+				<div id="currentState">no state</div>
+				<button id="next">Next</button>
+				<br>
+				<br>
 
-                <button id="leave">leave game</button>
-                <button id="next">Next</button>
+				<div id="chat"></div>
+				<input id="messageBox" placeholder="Type your message">
+				<button id="send">Send</button>
+				<br>
+				<br>
 
-                <br>
-                <br>
+				<div id="timer">not running</div>
+				<button id="start">start</button>
+				<br>
+				<button id="leave">leave game</button>
+			</div>
 
-                <div id="chat"></div>
-                <input id="messageBox" placeholder="Type your message">
-                <button id="send">Send</button>
+			<div id="displayCanvas">
+				<div id="results-c1">Card 1</div>
+				<div id="results-c2">Card 2</div>
+				<canvas id="c1" width="400" height="400"></canvas>
+				<canvas id="c2" width="400" height="400"></canvas>
+				<button id="vote1">Vote</button>
+				<button id="vote2">Vote</button>
+				<div id="score1">Votes: 0</div>
+				<div id="score2">Votes: 0</div>
+			</div>
 
-                <br>
-                <br>
+			<div id="wrapper">
+				<div id="results-draw">Drawing Canvas</div>
+				​
+				<div id="canvasControls">
+					<button id="clearcanvas">Clear</button>
+					<br>
 
-                <div id="timer">not running</div>
-                <button id="start">start</button>
-            </div>
+					<div id="drawing_modeoptions"></div>
 
-            <div id="displayCanvas">
-                <div id="results-c1">Card 1</div>
-                <div id="results-c2">Card 2</div>
-                <canvas id="c1" width="400" height="400"></canvas>
-                <canvas id="c2" width="400" height="400"></canvas>
-                <button id="vote1">Vote</button>
-                <button id="vote2">Vote</button>
-                <div id="score1">Votes: 0</div>
-                <div id="score2">Votes: 0</div>
-            </div>
+					<label for="drawing_linewidth">Line width:</label>
+					<span class="info">30</span>
+					<input type="range" value="30" min="0" max="150" id="drawing_linewidth">
+					<br>
 
-            <div id="wrapper">
-                <div id="results-draw">Drawing Canvas</div>
-                ​
-                <div id="canvasControls">
-                    <button id="clearcanvas">Clear</button>
-                    <br>
+					<label for="drawing_color">Line color:</label>
+					<input type="color" value="#000000" id="drawing_color">
+					<br>
 
-                    <div id="drawing_modeoptions"></div>
-
-                    <label for="drawing_linewidth">Line width:</label>
-                    <span class="info">30</span>
-                    <input type="range" value="30" min="0" max="150" id="drawing_linewidth">
-                    <br>
-
-                    <label for="drawing_color">Line color:</label>
-                    <input type="color" value="#000000" id="drawing_color">
-                    <br>
-
-                    <button id="save">Send to Server</button>
-                </div>
-                <br>
-                <br>
-                <div id="drawCanvas">
-                    <canvas id="drawC" width="400" height="400"></canvas>
-                </div>
-            </div>
-        </div>
+					<button id="save">Force Save</button>
+				</div>
+				<br>
+				<br>
+				
+				<div id="drawCanvas">
+					<canvas id="drawC" width="400" height="400"></canvas>
+				</div>
+			</div>
+		</div>
 	
 		<!-- TODO incorporate? -->
 		<!-- <ul id="userList"></ul> -->

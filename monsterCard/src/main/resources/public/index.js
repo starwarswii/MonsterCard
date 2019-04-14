@@ -8,7 +8,6 @@ $(function() {
 	var $games = $("#games");
 	var $create = $("#create");
 	var $refresh = $("#refresh");
-	var $gameIDForm = $("#gameIDForm");
 	
 	function loadGameList() {
 		$games.empty();
@@ -54,18 +53,23 @@ $(function() {
 		}
 		
 		util.postJson("/create", {sessionId: sessionId(), name: gameName}, function(response) {
-			var gameId = response.gameId;
-			util.redirect("/game/"+gameId);
+			util.redirect("/game/"+response.gameId);
 		});
 	});
 
-	$(document).ready(function() {
-		$gameIDForm.on("submit", function (e) {
-			e.preventDefault();
-			var data = $("input[name=gameID]").val();
-			util.redirect("/game/"+data);
-		});
+	$("#joinButton").click(function() {
+		var id = $("#gameId").val();
+		
+		if (id !== "") {
+			util.redirect("/game/"+id);
+		}
 	});
-
-
+	
+	$("#spectateButton").click(function() {
+		var id = $("#gameId").val();
+		
+		if (id !== "") {
+			util.redirect("/game/"+id, true);
+		}
+	});
 });

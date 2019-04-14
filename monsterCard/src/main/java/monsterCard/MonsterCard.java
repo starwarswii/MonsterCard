@@ -40,7 +40,9 @@ public class MonsterCard {//TODO add some logging like in timer demo
 		});
 		
 		app.get("/game/:id", ctx -> {
-			int id = Integer.parseInt(ctx.pathParam("id")); //for now assume id is always a valid int
+			
+			int id = ctx.pathParam("id", Integer.class).get();
+			
 			if (manager.gameExists(id)) {
 				//render template
 				
@@ -52,7 +54,6 @@ public class MonsterCard {//TODO add some logging like in timer demo
 				model.put("gameName", game.gameName);
 				
 				ctx.render("game.vtl", model);
-				
 				
 			} else {
 				ctx.result("no game with id "+id+" exists");
@@ -90,7 +91,7 @@ public class MonsterCard {//TODO add some logging like in timer demo
 			//so equivalently, we can just set the content type, and use ctx.result(json.toString())
 			ctx.contentType("application/json");
 			
-			int id = Integer.parseInt(ctx.pathParam("id"));
+			int id = ctx.pathParam("id", Integer.class).get();
 			if (manager.gameExists(id)) {
 				
 				Game game = manager.getGame(id);
@@ -105,32 +106,35 @@ public class MonsterCard {//TODO add some logging like in timer demo
 			
 			//TODO move this stuff into a websocket handler class
 			ws.onConnect(session -> {
-				int id = Integer.parseInt(session.pathParam("id"));
 				System.out.println("websocket connection made from "+session.host()+" with id "+session.getId());
 				
-				//assume the id is a valid game
-				//TODO we might be ok assuming this, as naturally you will be served a "game not found" page
-				//if you type an invalid id, and that wont spawn a websocket
+				int id = Integer.parseInt(session.pathParam("id"));
 				
-				manager.getGame(id).handleConnect(session);
+				if (manager.gameExists(id)) {	
+					manager.getGame(id).handleConnect(session);
+				}
 			});
 
 			ws.onClose((session, statusCode, reason) -> {
-				int id = Integer.parseInt(session.pathParam("id"));
 				System.out.println("websocket connection closed from "+session.host()+" with id "+session.getId()+". "+statusCode+": "+reason);
 				
-				manager.getGame(id).handleClose(session);
+				int id = Integer.parseInt(session.pathParam("id"));
+				
+				if (manager.gameExists(id)) {
+					manager.getGame(id).handleClose(session);
+				}
 			});
 
 			ws.onMessage((session, response) -> {
-				int id = Integer.parseInt(session.pathParam("id"));
 				System.out.println("got message from "+session.host()+" with id "+session.getId());
 				
-				manager.getGame(id).handleMessage(session, new JSONObject(response));
+				int id = Integer.parseInt(session.pathParam("id"));
+				
+				if (manager.gameExists(id)) {
+					manager.getGame(id).handleMessage(session, new JSONObject(response));
+				}
 			});
 		});
-		
-		
 		
 		app.start(7000);
 	}

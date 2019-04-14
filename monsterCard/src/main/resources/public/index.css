@@ -2,3 +2,13 @@
 	width: fit-content;
 	border: 1px solid black;
 }
+
+#gameId {
+	width: 50px;
+}
+
+/* removes number spinner in box */
+#gameId::-webkit-inner-spin-button, #gameId::-webkit-outer-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
