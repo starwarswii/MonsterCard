@@ -65,6 +65,8 @@ $(function() {
 			gameName = prompt("enter a game name", "MonsterCard");
 		}
 		
+		gameName = util.escape(gameName);
+		
 		//and now we do a post to /create and give the server the game name
 		//(along with the session id so it knows who the owner is)
 		util.postJson("/create", {sessionId: sessionId(), name: gameName}, function(response) {

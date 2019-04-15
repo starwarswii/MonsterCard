@@ -85,3 +85,8 @@ util.redirect = function(url, spec) {
 	//obj.search contains the question mark, obj.searchParams.toString() does not
 	window.location.href = url + obj.search;
 };
+
+//escapes the given string using jquery
+util.escape = function(string) {
+	return $("<div />").text(string).html();
+};

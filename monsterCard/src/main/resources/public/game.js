@@ -102,6 +102,8 @@ $(function() {
 
 				//we also put the cards, creators, and vote counts
 				//in the correct places
+				//note we don't need to explicitly escape player names here,
+				//as jquery's text() function does it for us
 				$("#results-c1").text("Card 1: by "+map.player1);
 				loadImg(c1, map.card1);
 				$score1.text("Votes: "+map.votes1);
@@ -392,15 +394,13 @@ $(function() {
 				case "chat":
 
 					//read the sender and message from the json
-					var sender = map.sender;
-					var message = map.message;
-
-					//we use query in this manner to escape the message,
-					//so we don't allow rendering whatever html the user types
-					var escapedMessage = $("<div />").text(message).html();
+					//we escape so we don't allow rendering
+					//whatever html the user types
+					var sender = util.escape(map.sender);
+					var message = util.escape(map.message);
 					
 					//then we append that message, along with the sender, to the chat box
-					$chat.append(sender+": "+escapedMessage+"<br>");
+					$chat.append(sender+": "+message+"<br>");
 
 					//when we get a new message, we also scroll the chat box to the bottom
 					$chat.scrollTop($chat.prop("scrollHeight"));
