@@ -90,6 +90,7 @@ public class MonsterCard {
 		
 		//http and websocket api handled by game manager and api handlers within game objects
 		//so we just point javalin at the manager, and it will handle the rest
+		//TODO maybe rename "state" url to something else
 		app.post("/state/:id", manager);
 		app.ws("/game/:id", manager);
 		
