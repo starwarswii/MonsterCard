@@ -13,14 +13,9 @@ public class MonsterCard {
 	static final long MAX_TIMEOUT = 3600000; //1 hour
 	
 	public static void main(String[] args) {
-		String herokuPort = System.getenv("PORT");
-		if(herokuPort==null) {
-			herokuPort = "7000";
-		}
-		Javalin app = Javalin.create()
-		        .start(Integer.parseInt(herokuPort))
-		        .get("/", ctx -> ctx.result("Hello Heroku"));
-
+		
+		Javalin app = Javalin.create().enableStaticFiles("/public");
+		
 		app.sessionHandler(() -> {
 			SessionHandler handler = JettyServerUtil.defaultSessionHandler();
 			
@@ -100,7 +95,19 @@ public class MonsterCard {
 		app.post("/state/:id", manager);
 		app.ws("/game/:id", manager);
 		
+		int port;
+		
+		//attempt to get the port from the environment variables
+		//where it will be set by heroku
+		String envPort = System.getenv("PORT");
+		
+		if (envPort != null) {
+			port = Integer.parseInt(envPort);
+		} else {
+			port = 7000;
+		}
+		
 		//start the javalin server on port 7000
-		app.start(7000);
+		app.start(port);
 	}
 }
