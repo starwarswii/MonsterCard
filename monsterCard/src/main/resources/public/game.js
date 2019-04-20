@@ -350,9 +350,17 @@ $(function() {
 	//set up the websocket. will be invoked last, after other setup functions
 	function setUpWebsocket() {
 
-		//the websocket points at this current url, but with "ws" protocol
+		//creating a websocket will fail if we use a secure websocket in
+		//an insecure context, or vice verse
+		//so we check if we're currently https, and then use wss, else ws
+		var protocol = "ws:";
+		if (location.protocol === "https:") {
+			protocol = "wss:";
+		}
+		
+		//the websocket points at this current url, but with "ws" or "wss" protocol
 		//calling this constructor also starts the process of opening the websocket
-		socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
+		socket = new WebSocket(protocol+"//"+location.hostname+":"+location.port+"/game/"+gameId);
 
 		//when the websocket opens,
 		socket.onopen = function(event) {

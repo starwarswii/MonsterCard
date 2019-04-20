@@ -5,56 +5,11 @@
 	<groupId>great</groupId>
 	<artifactId>monsterCard</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
-	<dependencies>
-		<dependency>
-			<groupId>io.javalin</groupId>
-			<artifactId>javalin</artifactId>
-			<version>2.8.0</version>
-			<type>jar</type>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<version>1.7.25</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.9.8</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>org.apache.velocity</groupId>
-			<artifactId>velocity-engine-core</artifactId>
-			<version>2.0</version>
-		</dependency>
-		
-		<dependency>
-		    <groupId>org.json</groupId>
-		    <artifactId>json</artifactId>
-		    <version>20180813</version>
-		</dependency>
-
-	</dependencies>
 	
 	<build>
 		<plugins>
+		
+			<!-- specifies we're using java 1.8 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -64,6 +19,8 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+			
+			<!-- configure packaging as a jar file with dependencies -->
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<executions>
@@ -76,30 +33,70 @@
 				</executions>
 				<configuration>
 					<descriptorRefs>
-						<!-- This tells Maven to include all dependencies -->
+						<!-- specifies including all dependencies within the jar -->
 						<descriptorRef>jar-with-dependencies</descriptorRef>
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>Main</mainClass>
+							<!-- the main class, with the main() method -->
+							<mainClass>monsterCard.MonsterCard</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
 			</plugin>
+
+			<!-- heroku plugin -->
+			<plugin>
+				<groupId>com.heroku.sdk</groupId>
+				<artifactId>heroku-maven-plugin</artifactId>
+				<version>1.1.3</version>
+				<configuration>
+					<jdkVersion>1.8</jdkVersion>
+					<!-- should match heroku app name -->
+					<appName>monstercard-demo</appName>
+					<processTypes>
+						<!-- the jar name is (artifactId)-(version)-jar-with-dependencies.jar -->
+						<web>java -jar ./target/monsterCard-0.0.1-SNAPSHOT-jar-with-dependencies.jar</web>
+					</processTypes>
+				</configuration>
+			</plugin>
+
 		</plugins>
-		<plugin>
-			<groupId>com.heroku.sdk</groupId>
-			<artifactId>heroku-maven-plugin</artifactId>
-			<version>1.1.3</version>
-			<configuration>
-				<jdkVersion>1.8</jdkVersion>
-				<appName>javalin-heroku-example</appName>
-				<processTypes>
-					<!-- Tell Heroku how to launch your application -->
-					<web>java -jar ./target/javalin-heroku-example-1.0-jar-with-dependencies.jar</web>
-				</processTypes>
-			</configuration>
-		</plugin>
 	</build>
-	
+
+	<dependencies>
+		<dependency>
+			<groupId>io.javalin</groupId>
+			<artifactId>javalin</artifactId>
+			<version>2.8.0</version>
+			<type>jar</type>
+		</dependency>
+
+		<!-- logger used for javalin -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.25</version>
+		</dependency>
+
+		<!-- TODO this is probably no longer needed, as we're using org.json -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.9.8</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.velocity</groupId>
+			<artifactId>velocity-engine-core</artifactId>
+			<version>2.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180813</version>
+		</dependency>
+
+	</dependencies>
 </project>
