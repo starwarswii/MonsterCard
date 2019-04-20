@@ -352,7 +352,7 @@ $(function() {
 
 		//the websocket points at this current url, but with "ws" protocol
 		//calling this constructor also starts the process of opening the websocket
-		socket = new WebSocket("ws://"+location.hostname+":"+location.port+"/game/"+gameId);
+		socket = new WebSocket("ws://"+location.hostname+":"+System.getenv("PORT")+"/game/"+gameId);
 
 		//when the websocket opens,
 		socket.onopen = function(event) {
