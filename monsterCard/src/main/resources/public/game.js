@@ -324,7 +324,7 @@ $(function() {
 
 			//set up timer if applicable
 			if (timerRunning) {
-				var timerValue = data.value;
+				var timerValue = response.value;
 				$start.prop("disabled", true);
 				$timer.text(timerValue);
 			}
