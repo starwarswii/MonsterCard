@@ -32,7 +32,6 @@ public class MonsterCard {
 			wsFactory.getPolicy().setIdleTimeout(MAX_TIMEOUT);
 		});
 		
-		
 		//construct the game manager. it will handle most requests
 		GameManager manager = new GameManager();
 		
@@ -107,7 +106,7 @@ public class MonsterCard {
 			port = 7000;
 		}
 		
-		//start the javalin server on port 7000
+		//start the javalin server
 		app.start(port);
 	}
 }
