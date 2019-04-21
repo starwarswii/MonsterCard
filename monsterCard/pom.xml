@@ -53,7 +53,7 @@
 				<configuration>
 					<jdkVersion>1.8</jdkVersion>
 					<!-- should match heroku app name -->
-					<appName>monstercard-demo</appName>
+					<appName>monstercard</appName>
 					<processTypes>
 						<!-- the jar name is (artifactId)-(version)-jar-with-dependencies.jar -->
 						<web>java -jar ./target/${project.build.finalName}-jar-with-dependencies.jar</web>
