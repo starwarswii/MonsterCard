@@ -3,7 +3,7 @@ package monsterCard;
 import java.util.ArrayList;
 import java.util.List;
 
-//holds a card and its full history
+//holds a card and its full history, using the memento design pattern
 public class Card {
 	
 	String name;

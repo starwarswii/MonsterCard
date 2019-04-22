@@ -3,7 +3,8 @@ package monsterCard;
 import java.util.ArrayList;
 import java.util.List;
 
-//holds a single history element of a card
+//holds a single history element of a card. this is part
+//of the memento design pattern used for the cards
 public class CardState {
 	
 	String svgString;
